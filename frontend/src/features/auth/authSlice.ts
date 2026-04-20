@@ -9,10 +9,14 @@ type AuthState = {
   isAuthenticated: boolean;
 };
 
+/*  REHYDRATE FROM localStorage */
+const token = localStorage.getItem("token");
+const user = localStorage.getItem("user");
+
 const initialState: AuthState = {
-  user: null,
-  token: localStorage.getItem("token"),
-  isAuthenticated: false,
+  user: user ? JSON.parse(user) : null,
+  token: token || null,
+  isAuthenticated: !!token,
 };
 
 /* ================= SLICE ================= */
@@ -21,7 +25,6 @@ const authSlice = createSlice({
   name: "auth",
   initialState,
   reducers: {
-
     // ================= SET LOGIN =================
     setCredentials: (
       state,
@@ -32,6 +35,7 @@ const authSlice = createSlice({
       state.isAuthenticated = true;
 
       localStorage.setItem("token", action.payload.token);
+      localStorage.setItem("user", JSON.stringify(action.payload.user));
     },
 
     // ================= LOGOUT =================
@@ -41,8 +45,8 @@ const authSlice = createSlice({
       state.isAuthenticated = false;
 
       localStorage.removeItem("token");
+      localStorage.removeItem("user");
     },
-
   },
 });
 

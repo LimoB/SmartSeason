@@ -1,18 +1,17 @@
-// src/services/api/baseApi.ts
-
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 
 /**
  * Base API for SmartSeason Backend
  * All feature APIs will inject endpoints into this
  */
+
 export const baseApi = createApi({
   reducerPath: "api",
 
   baseQuery: fetchBaseQuery({
-    baseUrl: "http://localhost:8000/api",
+    baseUrl: import.meta.env.VITE_API_URL,
 
-    //  attach JWT automatically
+    // Attach JWT automatically
     prepareHeaders: (headers) => {
       const token = localStorage.getItem("token");
 

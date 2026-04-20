@@ -1,5 +1,6 @@
-import { baseApi } from "../../services/baseApi";
+import { baseApi } from "@/services/baseApi";
 import type { User } from "@/types/types";
+import { setCredentials } from "./authSlice";
 
 /* ================= TYPES ================= */
 
@@ -50,6 +51,22 @@ export const authApi = baseApi.injectEndpoints({
         method: "POST",
         body: data,
       }),
+
+      // 🔥 AUTO SAVE TO REDUX + localStorage
+      async onQueryStarted(_, { queryFulfilled, dispatch }) {
+        try {
+          const { data } = await queryFulfilled;
+
+          dispatch(
+            setCredentials({
+              user: data.user,
+              token: data.token,
+            })
+          );
+        } catch (err) {
+          console.error("Login failed:", err);
+        }
+      },
     }),
 
     // ================= GET ME =================
@@ -57,7 +74,6 @@ export const authApi = baseApi.injectEndpoints({
       query: () => "/auth/me",
       providesTags: ["User"],
     }),
-
   }),
 });
 
