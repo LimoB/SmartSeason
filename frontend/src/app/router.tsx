@@ -25,6 +25,7 @@ import Users from "../pages/users/Users";
 import Updates from "../pages/updates/Updates";
 import Settings from "../pages/Settings";
 import Profile from "../pages/Profile";
+import CreateUpdate from "@/pages/updates/CreateUpdate";
 
 /* ================= AUTH GUARD ================= */
 const RequireAuth = () => {
@@ -81,6 +82,8 @@ export default function AppRouter() {
           <Route path="/profile" element={<Profile />} />
           <Route path="/settings" element={<Settings />} />
           <Route path="/updates" element={<Updates />} />
+          <Route path="/createpdates" element={<CreateUpdate />} />
+
 
           {/* ================= FIELD ROUTES (SHARED) ================= */}
           <Route path="/fields" element={<Fields />} />
