@@ -16,16 +16,17 @@ export default function Sidebar() {
 
   const user = useAppSelector((state) => state.auth.user);
 
-  const isAdmin = user?.role === "admin";
+  // avoid crash when user is still loading
+  const role = user?.role;
 
-  // ================= ROUTES =================
+  const isAdmin = role === "admin";
+
+  // ================= ROUTES (MATCHING YOUR ROUTER) =================
   const dashboardPath = isAdmin
     ? "/admin/dashboard"
     : "/agent/dashboard";
 
-  const fieldsPath = isAdmin
-    ? "/admin/fields"
-    : "/agent/fields";
+  const fieldsPath = "/fields"; // shared route (IMPORTANT FIX)
 
   const updatesPath = "/updates";
 
@@ -70,11 +71,7 @@ export default function Sidebar() {
 
         <button
           onClick={() => setOpen(!open)}
-          className="
-            p-2 rounded-lg
-            hover:bg-gray-100 dark:hover:bg-dark-surface
-            transition
-          "
+          className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-dark-surface transition"
         >
           {open ? <X size={18} /> : <Menu size={18} />}
         </button>
@@ -89,7 +86,7 @@ export default function Sidebar() {
           {open && "Dashboard"}
         </NavLink>
 
-        {/* FIELDS */}
+        {/* FIELDS (SHARED) */}
         <NavLink to={fieldsPath} className={linkClass}>
           <Tractor size={20} />
           {open && "Fields"}
@@ -115,9 +112,7 @@ export default function Sidebar() {
       {open && (
         <div className="absolute bottom-4 px-4 text-xs text-gray-400 space-y-1">
           <p className="font-medium">SmartSeason v1.0</p>
-          <p className="opacity-70">
-            Field Monitoring System
-          </p>
+          <p className="opacity-70">Field Monitoring System</p>
         </div>
       )}
 

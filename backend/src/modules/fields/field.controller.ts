@@ -38,13 +38,18 @@ export const getFieldById = async (
 ) => {
   try {
     const id = Number(req.params.id);
+
+    if (isNaN(id)) {
+      return res.status(400).json({ error: "Invalid field ID" });
+    }
+
     const field = await getFieldByIdService(id);
 
     if (!field) {
       return res.status(404).json({ error: "Field not found" });
     }
 
-    // 🔐 Access control
+    // Access control
     if (
       req.user?.role !== "admin" &&
       field.assignedAgentId !== req.user?.userId
@@ -66,7 +71,6 @@ export const createField = async (
   next: NextFunction
 ) => {
   try {
-    // 🔐 Only admin can create fields
     if (req.user?.role !== "admin") {
       return res.status(403).json({ error: "Only admin can create fields" });
     }
@@ -89,21 +93,35 @@ export const updateField = async (
   try {
     const id = Number(req.params.id);
 
+    if (isNaN(id)) {
+      return res.status(400).json({ error: "Invalid field ID" });
+    }
+
     const field = await getFieldByIdService(id);
+
     if (!field) {
       return res.status(404).json({ error: "Field not found" });
     }
 
-    // 🔐 Admin can update anything
-    // 🔐 Agent can ONLY update their own assigned field (non-stage fields)
-    if (
-      req.user?.role !== "admin" &&
-      field.assignedAgentId !== req.user?.userId
-    ) {
+    // Admin full access
+    const isAdmin = req.user?.role === "admin";
+
+    // Agent can only update assigned fields
+    const isOwner =
+      field.assignedAgentId === req.user?.userId;
+
+    if (!isAdmin && !isOwner) {
       return res.status(403).json({ error: "Access denied" });
     }
 
-    const updated = await updateFieldService(id, req.body);
+    /**
+     * IMPORTANT:
+     * Stage updates are blocked in service layer
+     * so we ensure clean payload here
+     */
+    const { currentStage, ...safeBody } = req.body;
+
+    const updated = await updateFieldService(id, safeBody);
 
     return res.json(updated);
   } catch (error) {
@@ -121,19 +139,26 @@ export const deleteField = async (
   try {
     const id = Number(req.params.id);
 
+    if (isNaN(id)) {
+      return res.status(400).json({ error: "Invalid field ID" });
+    }
+
     const field = await getFieldByIdService(id);
+
     if (!field) {
       return res.status(404).json({ error: "Field not found" });
     }
 
-    // 🔐 Only admin can delete
     if (req.user?.role !== "admin") {
       return res.status(403).json({ error: "Only admin can delete fields" });
     }
 
     await deleteFieldService(id);
 
-    return res.json({ message: "Field deleted successfully" });
+    return res.json({
+      success: true,
+      message: "Field deleted successfully",
+    });
   } catch (error) {
     next(error);
   }

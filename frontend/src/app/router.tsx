@@ -19,6 +19,7 @@ import Fields from "../pages/fields/Fields";
 import CreateField from "../pages/fields/CreateField";
 import FieldDetails from "../pages/fields/FieldDetails";
 import AssignField from "../pages/fields/AssignField";
+import EditField from "../pages/fields/EditField"; // <--- Added this import
 
 import Users from "../pages/users/Users";
 import Updates from "../pages/updates/Updates";
@@ -85,6 +86,7 @@ export default function AppRouter() {
           <Route path="/fields" element={<Fields />} />
           <Route path="/fields/create" element={<CreateField />} />
           <Route path="/fields/:id" element={<FieldDetails />} />
+          <Route path="/fields/:id/edit" element={<EditField />} /> {/* <--- Added this route */}
           <Route path="/fields/:id/assign" element={<AssignField />} />
 
           {/* ================= ADMIN ================= */}
