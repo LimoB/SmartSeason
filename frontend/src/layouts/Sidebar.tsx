@@ -16,7 +16,7 @@ interface NavItemProps {
   to: string;
   icon: ReactNode;
   label: string;
-  open: boolean;
+  isExpanded: boolean;
   linkClass: (props: { isActive: boolean }) => string;
   onClick?: () => void;
 }
@@ -24,9 +24,10 @@ interface NavItemProps {
 export default function Sidebar() {
   const user = useAppSelector((state) => state.auth.user);
 
-  // Initialize state based on current window width to avoid cascading effect
+  // isMobile tracks screen size
   const [isMobile, setIsMobile] = useState(window.innerWidth < 1024);
-  const [open, setOpen] = useState(window.innerWidth >= 1024);
+  // isExpanded tracks if the sidebar is "open" (showing labels) or "collapsed" (icons only)
+  const [isExpanded, setIsExpanded] = useState(window.innerWidth >= 1024);
 
   const role = user?.role;
   const isAdmin = role === "admin";
@@ -35,12 +36,8 @@ export default function Sidebar() {
     const handleResize = () => {
       const mobile = window.innerWidth < 1024;
       setIsMobile(mobile);
-      // Logic to adjust sidebar state when screen size crosses the breakpoint
-      if (mobile) {
-        setOpen(false);
-      } else {
-        setOpen(true);
-      }
+      // On Desktop, keep it expanded. On Mobile, default to collapsed (Rail).
+      setIsExpanded(!mobile);
     };
 
     window.addEventListener("resize", handleResize);
@@ -52,9 +49,16 @@ export default function Sidebar() {
   const updatesPath = "/updates";
   const usersPath = "/admin/users";
 
+  // Navigation Click: If on mobile, collapse the sidebar after clicking a link
+  const handleNavClick = () => {
+    if (isMobile) {
+      setIsExpanded(false);
+    }
+  };
+
   const linkClass = ({ isActive }: { isActive: boolean }) => `
-    group flex items-center gap-3 px-4 py-3 rounded-xl
-    text-sm font-bold transition-all duration-200
+    group flex items-center transition-all duration-300 ease-in-out rounded-xl mb-1
+    ${isExpanded ? "px-4 py-3 gap-3" : "p-3 justify-center"}
     ${
       isActive
         ? "bg-green-600 text-white shadow-lg shadow-green-600/20"
@@ -62,47 +66,39 @@ export default function Sidebar() {
     }
   `;
 
-  // Explicitly close sidebar on mobile navigation to avoid needing useEffect(location)
-  const handleNavClick = () => {
-    if (isMobile) {
-      setOpen(false);
-    }
-  };
-
   return (
     <>
-      {/* MOBILE OVERLAY */}
-      {isMobile && open && (
+      {/* MOBILE OVERLAY: Only shows when sidebar is expanded on mobile */}
+      {isMobile && isExpanded && (
         <div 
-          className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[60] transition-opacity"
-          onClick={() => setOpen(false)}
+          className="fixed inset-0 bg-black/40 backdrop-blur-[2px] z-[60] transition-opacity duration-300"
+          onClick={() => setIsExpanded(false)}
         />
       )}
 
       <aside
         className={`
           fixed top-0 left-0 h-screen z-[70]
-          bg-white dark:bg-slate-900
+          bg-white dark:bg-slate-900 
           border-r border-slate-200 dark:border-slate-800
           transition-all duration-300 ease-in-out
-          ${isMobile 
-            ? (open ? "translate-x-0 w-72" : "-translate-x-full w-72") 
-            : (open ? "w-64" : "w-20")
-          }
+          ${isExpanded ? "w-64" : "w-20"}
         `}
       >
-        {/* ================= HEADER ================= */}
-        <div className="flex items-center justify-between px-4 h-16 md:h-20 border-b border-slate-100 dark:border-slate-800">
-          {(open || isMobile) && (
-            <div className="flex items-center gap-2">
-              <div className="p-1.5 bg-green-600 rounded-lg">
-                <Sprout size={20} className="text-white" />
+        {/* ================= HEADER / TOGGLE ================= */}
+        <div className={`flex items-center h-16 md:h-20 border-b border-slate-100 dark:border-slate-800 px-4
+          ${isExpanded ? "justify-between" : "justify-center"}`}
+        >
+          {isExpanded && (
+            <div className="flex items-center gap-2 animate-in fade-in zoom-in duration-300">
+              <div className="p-1.5 bg-green-600 rounded-lg shrink-0">
+                <Sprout size={18} className="text-white" />
               </div>
               <div className="leading-tight">
-                <h1 className="text-base font-black text-slate-900 dark:text-white tracking-tight">
+                <h1 className="text-sm font-black text-slate-900 dark:text-white tracking-tight">
                   SmartSeason
                 </h1>
-                <p className="text-[10px] uppercase tracking-widest text-slate-400 font-bold">
+                <p className="text-[9px] uppercase tracking-tighter text-slate-400 font-bold">
                   {role?.replace("_", " ")}
                 </p>
               </div>
@@ -110,21 +106,20 @@ export default function Sidebar() {
           )}
 
           <button
-            onClick={() => setOpen(!open)}
-            className={`p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors
-              ${!open && !isMobile ? "mx-auto" : ""}`}
+            onClick={() => setIsExpanded(!isExpanded)}
+            className="p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors text-slate-500"
           >
-            {open ? <X size={20} /> : <Menu size={20} />}
+            {isExpanded ? <X size={20} /> : <Menu size={22} />}
           </button>
         </div>
 
-        {/* ================= MENU ================= */}
-        <nav className="mt-6 flex flex-col gap-2 px-3">
+        {/* ================= MENU ITEMS ================= */}
+        <nav className="mt-6 flex flex-col px-3">
           <NavItem 
             to={dashboardPath} 
             icon={<LayoutDashboard size={22} />} 
             label="Dashboard" 
-            open={open || isMobile} 
+            isExpanded={isExpanded} 
             linkClass={linkClass}
             onClick={handleNavClick}
           />
@@ -132,7 +127,7 @@ export default function Sidebar() {
             to={fieldsPath} 
             icon={<Tractor size={22} />} 
             label="Fields" 
-            open={open || isMobile} 
+            isExpanded={isExpanded} 
             linkClass={linkClass}
             onClick={handleNavClick}
           />
@@ -140,7 +135,7 @@ export default function Sidebar() {
             to={updatesPath} 
             icon={<ClipboardList size={22} />} 
             label="Updates" 
-            open={open || isMobile} 
+            isExpanded={isExpanded} 
             linkClass={linkClass}
             onClick={handleNavClick}
           />
@@ -150,42 +145,52 @@ export default function Sidebar() {
               to={usersPath} 
               icon={<Users size={22} />} 
               label="Users" 
-              open={open || isMobile} 
+              isExpanded={isExpanded} 
               linkClass={linkClass}
               onClick={handleNavClick}
             />
           )}
         </nav>
 
-        {/* ================= FOOTER ================= */}
-        {(open || isMobile) && (
-          <div className="absolute bottom-6 left-6 right-6">
-            <div className="p-4 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-100 dark:border-slate-800">
-              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Version</p>
-              <p className="text-xs font-bold text-slate-600 dark:text-slate-300">v1.0.4-Stable</p>
-            </div>
+        {/* ================= FOOTER / VERSION ================= */}
+        <div className="absolute bottom-6 left-0 w-full px-3">
+          <div className={`
+            flex items-center bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-100 dark:border-slate-800 transition-all duration-300
+            ${isExpanded ? "p-4 gap-3" : "p-3 justify-center"}
+          `}>
+             <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse shrink-0" />
+             {isExpanded && (
+               <div className="animate-in slide-in-from-left-2 duration-300">
+                 <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Status</p>
+                 <p className="text-[11px] font-bold text-slate-600 dark:text-slate-300">v1.0.4 Online</p>
+               </div>
+             )}
           </div>
-        )}
+        </div>
       </aside>
 
-      {/* MOBILE TRIGGER */}
-      {isMobile && !open && (
-        <button
-          onClick={() => setOpen(true)}
-          className="fixed bottom-6 right-6 p-4 bg-green-600 text-white rounded-full shadow-2xl z-[55] active:scale-90 transition-transform"
-        >
-          <Menu size={24} />
-        </button>
-      )}
+      {/* Main Content Spacer (adjusts based on sidebar width) */}
+      <div className={`transition-all duration-300 ${isExpanded ? "pl-64" : "pl-20"}`} />
     </>
   );
 }
 
-function NavItem({ to, icon, label, open, linkClass, onClick }: NavItemProps) {
+function NavItem({ to, icon, label, isExpanded, linkClass, onClick }: NavItemProps) {
   return (
     <NavLink to={to} className={linkClass} onClick={onClick}>
-      <div className="min-w-[22px]">{icon}</div>
-      {open && <span className="truncate">{label}</span>}
+      <div className="shrink-0">{icon}</div>
+      {isExpanded && (
+        <span className="truncate font-bold text-sm animate-in slide-in-from-left-3 duration-300">
+          {label}
+        </span>
+      )}
+      
+      {/* Tooltip for collapsed state (Desktop only) */}
+      {!isExpanded && (
+        <div className="fixed left-20 ml-2 px-2 py-1 bg-slate-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity hidden lg:block whitespace-nowrap z-[100]">
+          {label}
+        </div>
+      )}
     </NavLink>
   );
 }
