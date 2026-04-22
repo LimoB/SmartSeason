@@ -9,33 +9,48 @@ import {
 
 import {
   adminAuth,
-  adminOrAgentAuth, // Use this for shared access
+  adminOrAgentAuth,
 } from "../../middleware/bearAuth";
 
 const router: Router = Router();
 
-/* ================= PUBLIC / INITIAL ================= */
-
-// Note: If only admins should create users, change this to adminAuth
-router.post("/", createUser);
-
-/* ================= ADMIN ONLY ================= */
-
-// Only admins can see the full list of users
-router.get("/", adminAuth, getUsers);
-
-// Only admins can delete accounts
-router.delete("/:id", adminAuth, deleteUser);
-
-/* ================= SHARED (SELF OR ADMIN) ================= */
+/* ================= MANAGEMENT (ADMIN ONLY) ================= */
 
 /**
- * These routes use adminOrAgentAuth.
- * The controller logic inside getUserById and updateUser 
- * ensures that if the user isn't an admin, they can only access their own ID.
+ * GET /api/users
+ * Admins see everyone. Agents get 403 (Handled by middleware).
+ */
+router.get("/", adminAuth, getUsers);
+
+/**
+ * POST /api/users
+ * Usually, admins create accounts for new agents.
+ */
+router.post("/", adminAuth, createUser);
+
+/**
+ * DELETE /api/users/:id
+ * Only admins can remove accounts from the system.
+ */
+router.delete("/:id", adminAuth, deleteUser);
+
+
+/* ================= PROFILE (ADMIN OR SELF) ================= */
+
+/**
+ * GET /api/users/:id
+ * Logic in controller: 
+ * - If Admin: Can see any :id
+ * - If Agent: Can ONLY see :id if it matches their own ID.
  */
 router.get("/:id", adminOrAgentAuth, getUserById);
 
+/**
+ * PUT /api/users/:id
+ * Logic in controller:
+ * - If Admin: Can update anything.
+ * - If Agent: Can only update self (Role update is blocked in controller).
+ */
 router.put("/:id", adminOrAgentAuth, updateUser);
 
 export default router;
