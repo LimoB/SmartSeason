@@ -11,7 +11,7 @@ import dashboardRouter from "./modules/dashboard/dashboard.route";
 const app: Application = express();
 
 /* ============================================================
-   CORS CONFIG (FIXED FOR DEV + PRODUCTION)
+   CORS (DEV + PROD)
 ============================================================ */
 
 const allowedOrigins = [
@@ -22,8 +22,7 @@ const allowedOrigins = [
 app.use(
   cors({
     origin: (origin, callback) => {
-      // allow REST tools like Postman (no origin)
-      if (!origin) return callback(null, true);
+      if (!origin) return callback(null, true); // Postman / mobile apps
 
       if (allowedOrigins.includes(origin)) {
         return callback(null, true);
@@ -34,9 +33,6 @@ app.use(
     credentials: true,
   })
 );
-
-/* Handle preflight requests */
-app.options("*", cors());
 
 /* ============================================================
    BODY PARSING
