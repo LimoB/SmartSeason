@@ -12,7 +12,7 @@ import "react-toastify/dist/ReactToastify.css";
 
 // Global Styles
 import "./index.css";
-
+//triger deploy
 const rootElement = document.getElementById("root");
 
 if (!rootElement) {
