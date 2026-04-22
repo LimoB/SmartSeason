@@ -1,5 +1,33 @@
 import { useAppSelector } from "../../app/hooks";
 import { useGetAgentDashboardQuery } from "../../features/dashboard/dashboardApi";
+import { useMemo } from "react";
+import {
+  ClipboardList,
+  CheckCircle2,
+  Clock,
+  MapPin,
+  Leaf,
+  ChevronRight,
+  AlertCircle,
+  Search,
+} from "lucide-react";
+
+/* ================= TYPES ================= */
+interface Field {
+  id: number;
+  name: string;
+  cropType: string;
+  currentStage: string;
+  location?: string;
+}
+
+interface StatCardProps {
+  title: string;
+  value: number;
+  icon: React.ReactNode;
+  color: string;
+  bgColor: string;
+}
 
 export default function AgentDashboard() {
   const { user } = useAppSelector((state) => state.auth);
@@ -12,135 +40,153 @@ export default function AgentDashboard() {
     refetch,
   } = useGetAgentDashboardQuery();
 
-  /* ================= LOADING STATE ================= */
-  if (isLoading) {
-    return (
-      <div className="space-y-6 animate-pulse">
-        <div className="space-y-2">
-          <div className="h-8 w-64 bg-gray-200 dark:bg-slate-800 rounded" />
-          <div className="h-4 w-40 bg-gray-200 dark:bg-slate-800 rounded" />
-        </div>
+  /* ================= CALCULATE STATS FROM DATA ================= */
+  const stats = useMemo(() => {
+    const fields: Field[] = data?.fields ?? [];
+    return {
+      total: fields.length,
+      active: fields.filter(f => 
+        f.currentStage.toLowerCase() !== 'harvested' && 
+        f.currentStage.toLowerCase() !== 'completed'
+      ).length,
+      completed: fields.filter(f => 
+        f.currentStage.toLowerCase() === 'harvested' || 
+        f.currentStage.toLowerCase() === 'completed'
+      ).length,
+    };
+  }, [data]);
 
-        <div className="grid md:grid-cols-3 gap-4">
-          {[1, 2, 3].map((i) => (
-            <div
-              key={i}
-              className="h-24 bg-gray-200 dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700"
-            />
-          ))}
-        </div>
+  if (isLoading) return <AgentSkeleton />;
 
-        <div className="h-64 bg-gray-200 dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700" />
-      </div>
-    );
-  }
-
-  /* ================= ERROR STATE ================= */
   if (isError) {
     return (
-      <div className="mt-10 p-6 bg-red-500/10 border border-red-500/20 rounded-xl text-center">
-        <p className="text-red-500 dark:text-red-400 font-medium">
-          Unable to load your field assignments.
+      <div className="mt-10 p-10 bg-white dark:bg-dark-bg border-2 border-dashed border-red-200 dark:border-dark-border rounded-3xl text-center">
+        <AlertCircle className="mx-auto text-red-500 mb-4" size={48} />
+        <h3 className="text-lg font-bold text-gray-900 dark:text-white">Connection Issue</h3>
+        <p className="text-gray-500 dark:text-gray-400 max-w-xs mx-auto mt-2">
+          We couldn't retrieve your assigned fields. Please check your internet.
         </p>
-
-        <p className="text-gray-500 dark:text-slate-400 text-sm mt-1">
-          Please check your connection and try again.
-        </p>
-
         <button
           onClick={() => refetch()}
-          className="mt-4 px-4 py-2 text-sm bg-red-500/20 hover:bg-red-500/30 text-red-500 dark:text-red-300 rounded-lg transition"
+          className="mt-6 px-6 py-2 bg-primary-500 text-white rounded-xl font-semibold hover:opacity-90 transition-all active:scale-95 shadow-md shadow-primary-500/20"
         >
-          Retry
+          Retry Connection
         </button>
       </div>
     );
   }
 
-  const summary = data?.summary;
-  const fields = data?.fields ?? [];
+  const fields: Field[] = data?.fields ?? [];
 
   return (
-    <div className={`space-y-6 transition-opacity ${isFetching ? "opacity-60" : "opacity-100"}`}>
+    <div className={`space-y-8 transition-all duration-300 ${isFetching ? "opacity-60" : "opacity-100"}`}>
 
       {/* HEADER */}
-      <div>
-        <h1 className="text-3xl font-bold text-green-500 tracking-tight">
-          Field Agent Dashboard
-        </h1>
-
-        <p className="text-gray-500 dark:text-slate-400 mt-1">
-          Welcome back,{" "}
-          <span className="text-gray-900 dark:text-white font-medium">
-            {user?.fullName ?? "Agent"}
-          </span>
-        </p>
-      </div>
+      <header className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="flex items-center gap-4">
+          <div className="p-3 bg-primary-500/10 rounded-2xl">
+            <ClipboardList className="text-primary-500" size={28} />
+          </div>
+          <div>
+            <h1 className="text-3xl font-extrabold tracking-tight text-gray-900 dark:text-white">
+              Agent Dashboard
+            </h1>
+            <p className="text-gray-500 dark:text-gray-400">
+              Welcome back, <span className="text-primary-500 font-semibold">{user?.fullName ?? "Field Agent"}</span>
+            </p>
+          </div>
+        </div>
+      </header>
 
       {/* STATS */}
-      <div className="grid md:grid-cols-3 gap-4">
-        <StatCard title="Total Assigned" value={summary?.total ?? 0} />
-        <StatCard title="Active / Pending" value={summary?.pending ?? 0} />
-        <StatCard title="Completed" value={summary?.completed ?? 0} />
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+        <StatCard 
+          title="Assigned" 
+          value={stats.total} 
+          icon={<ClipboardList size={20} />} 
+          color="text-primary-500" 
+          bgColor="bg-primary-500/10" 
+        />
+        <StatCard 
+          title="Active" 
+          value={stats.active} 
+          icon={<Clock size={20} />} 
+          color="text-amber-500" 
+          bgColor="bg-amber-500/10" 
+        />
+        <StatCard 
+          title="Finished" 
+          value={stats.completed} 
+          icon={<CheckCircle2 size={20} />} 
+          color="text-emerald-500" 
+          bgColor="bg-emerald-500/10" 
+        />
       </div>
 
-      {/* ASSIGNED FIELDS */}
-      <div className="bg-white dark:bg-slate-900 rounded-xl border border-gray-200 dark:border-slate-800 overflow-hidden">
-
-        <div className="p-6 border-b border-gray-200 dark:border-slate-800">
-          <h2 className="text-lg font-semibold text-green-500">
-            My Assigned Fields
-          </h2>
-          <p className="text-xs text-gray-500 dark:text-slate-400 mt-1">
-            Current monitoring tasks and field status
-          </p>
+      {/* ASSIGNED FIELDS LIST */}
+      <div className="bg-white dark:bg-dark-bg rounded-3xl border border-gray-200 dark:border-dark-border shadow-sm overflow-hidden">
+        <div className="p-6 border-b border-gray-200 dark:border-dark-border flex justify-between items-center">
+          <div>
+            <h2 className="text-xl font-bold text-gray-900 dark:text-white">
+              My Assignments
+            </h2>
+            <p className="text-sm text-gray-500 dark:text-gray-400">
+              Field monitoring tasks for {user?.fullName ?? "Agent"}
+            </p>
+          </div>
+          <div className="hidden sm:block text-xs font-bold bg-gray-100 dark:bg-dark-surface px-3 py-1 rounded-full text-gray-500 dark:text-gray-300">
+            {fields.length} TOTAL
+          </div>
         </div>
 
         <div className="p-6">
           {fields.length > 0 ? (
-            <div className="space-y-3">
+            <div className="grid gap-4">
               {fields.map((field) => (
                 <div
                   key={field.id}
                   className="
-                    group p-4
-                    bg-gray-50 dark:bg-slate-800/50
-                    hover:bg-gray-100 dark:hover:bg-slate-800
-                    rounded-lg flex justify-between items-center
-                    border border-gray-200 dark:border-slate-700/50
-                    transition-all cursor-pointer
+                    group p-5
+                    bg-gray-50 dark:bg-dark-surface/30
+                    hover:bg-primary-500/5 dark:hover:bg-primary-500/10
+                    rounded-2xl flex flex-col sm:flex-row justify-between sm:items-center
+                    border border-gray-200 dark:border-dark-border
+                    transition-all duration-200 cursor-pointer
                   "
                 >
-                  <div className="space-y-1">
-                    <p className="font-medium text-gray-900 dark:text-white group-hover:text-green-500 transition-colors">
-                      {field.name}
-                    </p>
-
-                    <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-slate-400">
-                      <span className="bg-gray-200 dark:bg-slate-700 px-2 py-0.5 rounded text-gray-700 dark:text-slate-300">
-                        {field.cropType}
-                      </span>
-
-                      {field.location && <span>• {field.location}</span>}
+                  <div className="flex items-center gap-4">
+                    <div className="h-12 w-12 rounded-2xl bg-white dark:bg-dark-bg border border-gray-200 dark:border-dark-border flex items-center justify-center text-primary-500 shadow-sm transition-transform group-hover:scale-110">
+                      <Leaf size={22} />
+                    </div>
+                    <div className="space-y-1">
+                      <p className="font-bold text-gray-900 dark:text-white group-hover:text-primary-500 transition-colors">
+                        {field.name}
+                      </p>
+                      <div className="flex flex-wrap items-center gap-y-1 gap-x-3 text-xs text-gray-500 dark:text-gray-400">
+                        <span className="font-semibold text-primary-500">{field.cropType}</span>
+                        {field.location && (
+                          <span className="flex items-center gap-1">
+                            <MapPin size={12} /> {field.location}
+                          </span>
+                        )}
+                      </div>
                     </div>
                   </div>
 
-                  <div className="text-right">
-                    <span className="
-                      inline-block px-3 py-1 text-xs font-medium rounded-full
-                      bg-green-500/10 text-green-600 dark:text-green-400
-                      border border-green-500/20
-                    ">
-                      {field.currentStage}
-                    </span>
+                  <div className="mt-4 sm:mt-0 flex items-center justify-between sm:justify-end gap-4">
+                    <StageBadge stage={field.currentStage} />
+                    <ChevronRight size={18} className="text-gray-300 dark:text-gray-600 group-hover:text-primary-500 transition-all group-hover:translate-x-1" />
                   </div>
                 </div>
               ))}
             </div>
           ) : (
-            <div className="py-10 text-center">
-              <p className="text-gray-500 dark:text-slate-400 italic">
-                No fields assigned to you yet.
+            <div className="py-16 text-center">
+              <div className="inline-flex p-4 bg-gray-50 dark:bg-dark-surface rounded-full mb-4 text-gray-300 dark:text-gray-600">
+                <Search size={40} />
+              </div>
+              <p className="text-gray-500 dark:text-gray-400 font-medium italic">
+                No fields assigned to your profile yet.
               </p>
             </div>
           )}
@@ -150,29 +196,49 @@ export default function AgentDashboard() {
   );
 }
 
-/* ================= STATS CARD ================= */
+/* ================= SUB-COMPONENTS ================= */
 
-function StatCard({ title, value }: { title: string; value: number }) {
+function StatCard({ title, value, icon, color, bgColor }: StatCardProps) {
   return (
-    <div className="
-      bg-white dark:bg-slate-900
-      p-5 rounded-xl
-      border border-gray-200 dark:border-slate-800
-      hover:border-green-500/30
-      transition-colors group
-    ">
-      <p className="
-        text-gray-500 dark:text-slate-400
-        text-xs uppercase tracking-widest font-semibold
-        group-hover:text-gray-700 dark:group-hover:text-slate-300
-        transition-colors
-      ">
-        {title}
-      </p>
-
-      <p className="text-3xl font-bold text-green-500 mt-2">
-        {value}
-      </p>
+    <div className="bg-white dark:bg-dark-bg p-6 rounded-3xl border border-gray-200 dark:border-dark-border shadow-sm hover:shadow-md transition-all group">
+      <div className="flex items-center justify-between mb-4">
+        <div className={`p-3 ${bgColor} ${color} rounded-2xl group-hover:rotate-6 transition-transform`}>
+          {icon}
+        </div>
+      </div>
+      <div>
+        <p className="text-gray-500 dark:text-gray-400 text-sm font-bold uppercase tracking-widest">
+          {title}
+        </p>
+        <p className="text-4xl font-black text-gray-900 dark:text-white mt-1">
+          {value}
+        </p>
+      </div>
     </div>
   );
 }
+
+function StageBadge({ stage }: { stage: string }) {
+  const s = stage.toLowerCase();
+  let styles = "bg-gray-100 text-gray-600 dark:bg-dark-surface dark:text-gray-400";
+  
+  if (s === 'planted') styles = "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 border border-amber-200 dark:border-amber-900/20";
+  if (s === 'growing') styles = "bg-primary-500/10 text-primary-500 dark:bg-primary-500/20 dark:text-primary-400 border border-primary-500/20";
+  if (s === 'ready' || s === 'harvested' || s === 'completed') styles = "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-900/20";
+
+  return (
+    <span className={`px-4 py-1.5 text-[10px] font-black uppercase tracking-tighter rounded-full transition-colors ${styles}`}>
+      {stage}
+    </span>
+  );
+}
+
+const AgentSkeleton = () => (
+  <div className="space-y-8 animate-pulse p-4">
+    <div className="h-12 w-64 bg-gray-200 dark:bg-dark-surface rounded-2xl" />
+    <div className="grid grid-cols-3 gap-6">
+      {[1, 2, 3].map(i => <div key={i} className="h-32 bg-gray-200 dark:bg-dark-surface rounded-3xl" />)}
+    </div>
+    <div className="h-96 bg-gray-200 dark:bg-dark-surface rounded-3xl" />
+  </div>
+);

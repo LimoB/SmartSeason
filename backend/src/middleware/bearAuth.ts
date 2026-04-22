@@ -22,14 +22,15 @@ export type UserRole = "admin" | "field_agent";
    JWT PAYLOAD TYPE
 ============================================================ */
 export type DecodedToken = {
-  userId: number;
+  id: number;      // Added to fix ts(2339)
+  userId: number;  // Kept for backward compatibility
   email: string;
   role: UserRole;
   exp?: number;
 };
 
 /* ============================================================
-   GENERATE 6-DIGIT CODE (optional future use)
+   GENERATE 6-DIGIT CODE
 ============================================================ */
 export const generateVerificationCode = (): string =>
   Math.floor(100000 + Math.random() * 900000).toString();
@@ -38,15 +39,18 @@ export const generateVerificationCode = (): string =>
    SIGN ACCESS TOKEN
 ============================================================ */
 export const signToken = (
-  payload: DecodedToken,
+  payload: Omit<DecodedToken, "id" | "exp"> & { id?: number },
   secret: string,
   expiresIn: StringValue = "1h"
 ): string => {
   const options: SignOptions = { expiresIn };
+  
+  // Ensure we sign with 'userId' as the primary key in the token payload
+  const signPayload = { ...payload, userId: payload.userId || payload.id };
 
-  console.log(`[signToken] userId=${payload.userId}`);
+  console.log(`[signToken] userId=${signPayload.userId}`);
 
-  return jwt.sign(payload, secret, options);
+  return jwt.sign(signPayload, secret, options);
 };
 
 /* ============================================================
@@ -70,25 +74,25 @@ export const signRefreshToken = (
 const normalizeDecodedToken = (raw: any): DecodedToken | null => {
   if (!raw || typeof raw !== "object") return null;
 
-  const userId =
-    typeof raw.userId === "number"
-      ? raw.userId
-      : parseInt(raw.userId ?? raw.id, 10);
+  // Extract ID from either userId or id field
+  const extractedId = raw.userId ?? raw.id;
+  const userId = typeof extractedId === "number" ? extractedId : parseInt(extractedId, 10);
 
   const email = typeof raw.email === "string" ? raw.email : null;
   const role = raw.role;
 
   if (
-    !userId ||
-    !email ||
+    isNaN(userId) || 
+    !email || 
     !["admin", "field_agent"].includes(role)
   ) {
-    console.error("[normalizeDecodedToken] invalid token:", raw);
+    console.error("[normalizeDecodedToken] invalid token content:", raw);
     return null;
   }
 
   return {
-    userId,
+    id: userId,     // Both point to the same database ID
+    userId: userId, 
     email,
     role,
     exp: typeof raw.exp === "number" ? raw.exp : undefined,
@@ -127,21 +131,20 @@ const authMiddlewareFactory = (allowedRoles: UserRole | UserRole[]) => {
       ? authHeader.slice(7)
       : authHeader;
 
-    if (!process.env.JWT_SECRET) {
+    const secret = process.env.JWT_SECRET;
+    if (!secret) {
       res.status(500).json({ error: "JWT_SECRET not configured" });
       return;
     }
 
-    const decoded = verifyToken(token, process.env.JWT_SECRET);
+    const decoded = verifyToken(token, secret);
 
     if (!decoded) {
       res.status(401).json({ error: "Invalid or expired token" });
       return;
     }
 
-    const allowed = Array.isArray(allowedRoles)
-      ? allowedRoles
-      : [allowedRoles];
+    const allowed = Array.isArray(allowedRoles) ? allowedRoles : [allowedRoles];
 
     if (!allowed.includes(decoded.role)) {
       res.status(403).json({
@@ -150,6 +153,7 @@ const authMiddlewareFactory = (allowedRoles: UserRole | UserRole[]) => {
       return;
     }
 
+    // Attach normalized user to request
     req.user = decoded;
     next();
   };

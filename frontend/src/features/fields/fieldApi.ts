@@ -3,20 +3,28 @@ import type { Field } from "@/types/types";
 
 /* ================= TYPES ================= */
 
-// Create Field Request
-export interface CreateFieldRequest {
+// Base Field Input
+interface BaseFieldInput {
   name: string;
   cropType: string;
   location?: string;
   plantingDate: string;
   expectedHarvestDate?: string;
+}
+
+// ================= ADMIN ONLY =================
+export interface AdminCreateFieldRequest extends BaseFieldInput {
   assignedAgentId?: number | null;
 }
 
-// Update Field Request
-export type UpdateFieldRequest = Partial<CreateFieldRequest>;
+// Admin can update everything
+export type AdminUpdateFieldRequest = Partial<AdminCreateFieldRequest>;
 
-// Assign Field Request
+// ================= AGENT SAFE =================
+// Agent CANNOT assign or change restricted fields
+export type AgentUpdateFieldRequest = Partial<BaseFieldInput>;
+
+// ================= ASSIGN =================
 export interface AssignFieldRequest {
   id: number;
   agentId: number;
@@ -27,20 +35,20 @@ export interface AssignFieldRequest {
 export const fieldApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
 
-    // ================= GET ALL FIELDS =================
+    /* ================= GET ALL ================= */
     getFields: builder.query<Field[], void>({
       query: () => "/fields",
       providesTags: ["Field"],
     }),
 
-    // ================= GET FIELD BY ID =================
+    /* ================= GET BY ID ================= */
     getFieldById: builder.query<Field, number>({
       query: (id) => `/fields/${id}`,
       providesTags: ["Field"],
     }),
 
-    // ================= CREATE FIELD =================
-    createField: builder.mutation<Field, CreateFieldRequest>({
+    /* ================= CREATE (ADMIN) ================= */
+    createField: builder.mutation<Field, AdminCreateFieldRequest>({
       query: (data) => ({
         url: "/fields",
         method: "POST",
@@ -49,10 +57,10 @@ export const fieldApi = baseApi.injectEndpoints({
       invalidatesTags: ["Field"],
     }),
 
-    // ================= UPDATE FIELD =================
+    /* ================= UPDATE (SAFE FOR BOTH) ================= */
     updateField: builder.mutation<
       Field,
-      { id: number } & UpdateFieldRequest
+      { id: number } & (AdminUpdateFieldRequest | AgentUpdateFieldRequest)
     >({
       query: ({ id, ...data }) => ({
         url: `/fields/${id}`,
@@ -62,7 +70,7 @@ export const fieldApi = baseApi.injectEndpoints({
       invalidatesTags: ["Field"],
     }),
 
-    // ================= DELETE FIELD =================
+    /* ================= DELETE (ADMIN) ================= */
     deleteField: builder.mutation<void, number>({
       query: (id) => ({
         url: `/fields/${id}`,
@@ -71,11 +79,8 @@ export const fieldApi = baseApi.injectEndpoints({
       invalidatesTags: ["Field"],
     }),
 
-    // ================= ASSIGN FIELD =================
-    assignField: builder.mutation<
-      Field,
-      AssignFieldRequest
-    >({
+    /* ================= ASSIGN (ADMIN ONLY) ================= */
+    assignField: builder.mutation<Field, AssignFieldRequest>({
       query: ({ id, agentId }) => ({
         url: `/fields/${id}/assign`,
         method: "PATCH",

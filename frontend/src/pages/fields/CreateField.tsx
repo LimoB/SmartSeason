@@ -1,13 +1,19 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useCreateFieldMutation } from "@/features/fields/fieldApi";
+import { useAppSelector } from "@/app/hooks";
 import { ArrowLeft } from "lucide-react";
-import type { CreateFieldRequest } from "@/features/fields/fieldApi";
-
+import type { AdminCreateFieldRequest } from "@/features/fields/fieldApi";
 import { toast } from "react-toastify";
 
 /* ================= FORM STATE ================= */
-type FormState = Omit<CreateFieldRequest, "assignedAgentId">;
+type FormState = {
+  name: string;
+  cropType: string;
+  location: string;
+  plantingDate: string;
+  expectedHarvestDate: string;
+};
 
 /* ================= API ERROR TYPE ================= */
 type ApiError = {
@@ -18,11 +24,15 @@ type ApiError = {
 
 interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   label: string;
+  required?: boolean;
 }
 
 export default function CreateField() {
   const navigate = useNavigate();
   const [createField, { isLoading }] = useCreateFieldMutation();
+
+  const { user } = useAppSelector((state) => state.auth);
+  const isAdmin = user?.role === "admin";
 
   const [form, setForm] = useState<FormState>({
     name: "",
@@ -32,6 +42,16 @@ export default function CreateField() {
     expectedHarvestDate: "",
   });
 
+  /* ================= PROTECT ROUTE ================= */
+  if (!isAdmin) {
+    return (
+      <div className="p-10 text-center text-red-500 font-medium">
+        Access denied. Only admins can create fields.
+      </div>
+    );
+  }
+
+  /* ================= CHANGE ================= */
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
 
@@ -41,25 +61,38 @@ export default function CreateField() {
     }));
   };
 
+  /* ================= VALIDATION ================= */
+  const isValid =
+    form.name.trim() &&
+    form.cropType.trim() &&
+    form.plantingDate;
+
   /* ================= SUBMIT ================= */
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
-    try {
-      await createField({
-        name: form.name,
-        cropType: form.cropType,
-        location: form.location,
+    if (!isValid) {
+      toast.error("Please fill all required fields");
+      return;
+    }
 
-        // SAFE DATE HANDLING
+    try {
+      const payload: AdminCreateFieldRequest = {
+        name: form.name.trim(),
+        cropType: form.cropType.trim(),
+        location: form.location.trim() || undefined,
+
         plantingDate: new Date(form.plantingDate).toISOString(),
 
         expectedHarvestDate: form.expectedHarvestDate
           ? new Date(form.expectedHarvestDate).toISOString()
-          : null,
+          : undefined,
 
+        // optional for admin
         assignedAgentId: null,
-      }).unwrap();
+      };
+
+      await createField(payload).unwrap();
 
       toast.success("Field created successfully");
       navigate("/fields");
@@ -83,7 +116,7 @@ export default function CreateField() {
         <ArrowLeft size={16} /> Back
       </button>
 
-      <h1 className="text-2xl font-bold text-green-500">
+      <h1 className="text-2xl font-bold text-green-600">
         Create Field
       </h1>
 
@@ -97,6 +130,7 @@ export default function CreateField() {
           label="Field Name"
           value={form.name}
           onChange={handleChange}
+          required
         />
 
         <Input
@@ -104,6 +138,7 @@ export default function CreateField() {
           label="Crop Type"
           value={form.cropType}
           onChange={handleChange}
+          required
         />
 
         <Input
@@ -119,6 +154,7 @@ export default function CreateField() {
           type="date"
           value={form.plantingDate}
           onChange={handleChange}
+          required
         />
 
         <Input
@@ -130,8 +166,8 @@ export default function CreateField() {
         />
 
         <button
-          disabled={isLoading}
-          className="w-full py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition disabled:opacity-50"
+          disabled={isLoading || !isValid}
+          className="w-full py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition disabled:opacity-50"
         >
           {isLoading ? "Creating..." : "Create Field"}
         </button>
@@ -141,16 +177,18 @@ export default function CreateField() {
 }
 
 /* ================= INPUT COMPONENT ================= */
-function Input({ label, ...props }: InputProps) {
+
+function Input({ label, required, ...props }: InputProps) {
   return (
     <div className="space-y-1">
       <label className="text-sm text-gray-500 dark:text-slate-400">
-        {label}
+        {label} {required && <span className="text-red-500">*</span>}
       </label>
 
       <input
         {...props}
-        className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800"
+        required={required}
+        className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 focus:ring-2 focus:ring-green-500 outline-none"
       />
     </div>
   );

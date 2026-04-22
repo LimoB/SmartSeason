@@ -29,26 +29,21 @@ export const getUsers = async (
 
 /* ================= GET USER BY ID ================= */
 
-export const getUserById = async (
-  req: Request,
-  res: Response,
-  next: NextFunction
-) => {
+export const getUserById = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const id = Number(req.params.id);
-    if (isNaN(id)) {
-      return res.status(400).json({ error: "Invalid ID" });
-    }
+    if (isNaN(id)) return res.status(400).json({ error: "Invalid ID" });
 
     const currentUser = req.user;
-
     const user = await getUserByIdService(id);
-    if (!user) {
-      return res.status(404).json({ error: "User not found" });
-    }
+    
+    if (!user) return res.status(404).json({ error: "User not found" });
 
-    // 🔐 Users can only view themselves unless admin
-    if (currentUser?.role !== "admin" && currentUser?.userId !== id) {
+    // FIX: Ensure you are using the correct property name (id vs userId)
+    // Check your auth middleware to see which one you actually use!
+    const currentUserId = currentUser?.userId || currentUser?.id; 
+
+    if (currentUser?.role !== "admin" && currentUserId !== id) {
       return res.status(403).json({ error: "Forbidden" });
     }
 
@@ -75,41 +70,28 @@ export const createUser = async (
 
 /* ================= UPDATE USER ================= */
 
-export const updateUser = async (
-  req: Request,
-  res: Response,
-  next: NextFunction
-) => {
+export const updateUser = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const targetId = Number(req.params.id);
     const currentUser = req.user;
+    
+    // FIX: Fallback to .id if .userId is missing
+    const currentUserId = currentUser?.userId || currentUser?.id;
 
-    if (isNaN(targetId)) {
-      return res.status(400).json({ error: "Invalid ID" });
-    }
+    if (isNaN(targetId)) return res.status(400).json({ error: "Invalid ID" });
 
-    // 🔐 Access control
     const isAdmin = currentUser?.role === "admin";
-    const isSelf = currentUser?.userId === targetId;
+    const isSelf = currentUserId === targetId;
 
     if (!isAdmin && !isSelf) {
-      return res.status(403).json({
-        error: "Forbidden: You cannot update this profile",
-      });
+      return res.status(403).json({ error: "Forbidden: You cannot update this profile" });
     }
 
-    // 🔐 Prevent role escalation (non-admins)
     const updateData = { ...req.body };
-
-    if (!isAdmin && "role" in updateData) {
-      delete updateData.role;
-    }
+    if (!isAdmin && "role" in updateData) delete updateData.role;
 
     const updated = await updateUserService(targetId, updateData);
-
-    if (!updated) {
-      return res.status(404).json({ error: "User not found" });
-    }
+    if (!updated) return res.status(404).json({ error: "User not found" });
 
     return res.json(updated);
   } catch (error) {

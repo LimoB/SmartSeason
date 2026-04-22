@@ -1,133 +1,180 @@
 import { useNavigate } from "react-router-dom";
-import { useMemo } from "react";
-import { Plus, Search, LayoutGrid, Table, UserPlus, Trash2, AlertCircle, User as UserIcon, Eye } from "lucide-react";
+import { useMemo, type ReactNode } from "react";
+import {
+  Plus,
+  Search,
+  LayoutGrid,
+  Table,
+  UserPlus,
+  Trash2,
+  User as UserIcon,
+  Eye,
+} from "lucide-react";
 
-import { useGetFieldsQuery, useDeleteFieldMutation } from "@/features/fields/fieldApi";
+import {
+  useGetFieldsQuery,
+  useDeleteFieldMutation,
+} from "@/features/fields/fieldApi";
 import { useGetUsersQuery } from "@/features/users/userApi";
 import { useAppDispatch, useAppSelector } from "@/app/hooks";
-import { setFilter, setSearch, setViewMode } from "@/features/fields/fieldSlice";
-import type { Field, FieldStatus, User } from "@/types/types";
+import {
+  setFilter,
+  setSearch,
+  setViewMode,
+} from "@/features/fields/fieldSlice";
+
+import type { Field, User, FieldStage } from "@/types/types";
+
+/* ================= TYPES ================= */
+type FieldWithAgent = Field & {
+  agent?: { fullName: string } | null;
+};
+
+type FieldCardProps = {
+  field: FieldWithAgent;
+  isAdmin: boolean;
+  onDelete: (id: number) => void;
+};
+
+type FieldTableProps = {
+  fields: FieldWithAgent[];
+  isAdmin: boolean;
+  onDelete: (id: number) => void;
+};
+
+type ViewButtonProps = {
+  active: boolean;
+  onClick: () => void;
+  icon: ReactNode;
+};
 
 export default function Fields() {
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
-  
+
   const { user: currentUser } = useAppSelector((state) => state.auth);
   const isAdmin = currentUser?.role === "admin";
 
-  const { data: fieldData, isLoading: fieldsLoading, isError: fieldsError } = useGetFieldsQuery();
+  const { data: fieldData, isLoading: fieldsLoading } = useGetFieldsQuery();
   const { data: userData, isLoading: usersLoading } = useGetUsersQuery();
+  const [deleteField] = useDeleteFieldMutation();
 
-  const fields = useMemo(() => {
+  const { filter, search, viewMode } = useAppSelector((state) => state.fields);
+
+  const fields: FieldWithAgent[] = useMemo(() => {
     const rawFields = (fieldData || []) as Field[];
     const allUsers = (userData || []) as User[];
 
-    return rawFields.map(field => {
-      const agent = allUsers.find(u => u.id === field.assignedAgentId);
+    return rawFields.map((field) => {
+      const agent = allUsers.find((u) => u.id === field.assignedAgentId);
       return {
         ...field,
-        agent: agent ? { fullName: agent.fullName } : null
+        agent: agent ? { fullName: agent.fullName } : null,
       };
     });
   }, [fieldData, userData]);
 
-  const [deleteField] = useDeleteFieldMutation();
-  const { filter, search, viewMode } = useAppSelector((state) => state.fields);
-
   const filteredFields = useMemo(() => {
     return fields.filter((f) => {
-      const matchesFilter = filter === "all" || f.currentStage === filter;
-      const matchesSearch = 
-        f.name.toLowerCase().includes(search.toLowerCase()) || 
-        f.cropType.toLowerCase().includes(search.toLowerCase()) ||
-        f.agent?.fullName?.toLowerCase().includes(search.toLowerCase());
-      return matchesFilter && matchesSearch;
+      if (filter.stage !== "all" && f.currentStage !== filter.stage) return false;
+      if (!isAdmin && f.assignedAgentId !== currentUser?.id) return false;
+      const q = search.toLowerCase();
+      return (
+        f.name.toLowerCase().includes(q) ||
+        f.cropType.toLowerCase().includes(q) ||
+        f.agent?.fullName?.toLowerCase().includes(q)
+      );
     });
-  }, [fields, filter, search]);
+  }, [fields, filter, search, isAdmin, currentUser]);
 
   const handleDelete = async (id: number) => {
     if (!isAdmin) return;
-    if (window.confirm("Are you sure you want to delete this field? This action cannot be undone.")) {
+    if (confirm("Delete this field?")) {
       try {
         await deleteField(id).unwrap();
       } catch (err) {
-        console.error("Failed to delete:", err);
+        console.error(err);
       }
     }
   };
 
-  const getStatusStyles = (status: FieldStatus) => {
-    switch (status) {
-      case "at_risk": return "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400 border-red-200";
-      case "completed": return "bg-gray-100 text-gray-700 dark:bg-slate-800 dark:text-slate-400";
-      default: return "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400";
-    }
-  };
-
   if (fieldsLoading || usersLoading) return <FieldsSkeleton />;
-  if (fieldsError) return <div className="p-10 text-center text-red-500 font-medium">Error loading fields.</div>;
 
   return (
-    <div className="space-y-6 p-4 md:p-0">
-      <header className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <h1 className="text-3xl font-extrabold text-slate-900 dark:text-white">Fields</h1>
+    <div className="space-y-6 min-h-screen transition-colors duration-300">
+      {/* HEADER */}
+      <header className="flex justify-between items-center">
+        <div>
+          <h1 className="text-3xl font-extrabold tracking-tight text-gray-900 dark:text-white">Fields</h1>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Manage and monitor all agricultural plots</p>
+        </div>
         {isAdmin && (
           <button
             onClick={() => navigate("/fields/create")}
-            className="inline-flex items-center gap-2 px-5 py-2.5 bg-green-600 text-white font-bold rounded-xl hover:bg-green-700 transition-colors shadow-lg shadow-green-600/20"
+            className="flex items-center gap-2 px-5 py-2.5 bg-primary-500 hover:opacity-90 text-white rounded-xl shadow-lg shadow-primary-500/20 transition-all active:scale-95"
           >
             <Plus size={20} />
-            Add New Field
+            <span className="font-semibold">Add Field</span>
           </button>
         )}
       </header>
 
       {/* FILTER BAR */}
-      <section className="flex flex-col lg:flex-row gap-4 items-center justify-between bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
+      <section className="flex flex-col lg:flex-row gap-4 justify-between bg-white dark:bg-dark-bg p-4 rounded-2xl border border-gray-200 dark:border-dark-border shadow-sm">
         <div className="relative w-full lg:w-96">
-          <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+          <Search
+            size={18}
+            className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+          />
           <input
-            type="text"
-            placeholder="Search fields, crops, or agents..."
             value={search}
             onChange={(e) => dispatch(setSearch(e.target.value))}
-            className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 outline-none focus:ring-2 focus:ring-green-500/50 transition-all"
+            placeholder="Search fields, crops, or agents..."
+            className="w-full pl-10 pr-4 py-2.5 bg-gray-50 dark:bg-dark-surface/50 border border-transparent focus:border-primary-500 dark:focus:border-primary-500 rounded-xl outline-none transition-all text-sm"
           />
         </div>
 
         <div className="flex flex-wrap items-center gap-3">
-          <div className="flex bg-slate-100 dark:bg-slate-800 p-1 rounded-lg">
-            {(["all", "planted", "growing", "ready", "harvested"] as const).map((f) => (
+          <div className="flex bg-gray-100 dark:bg-dark-surface p-1 rounded-xl">
+            {(["all", "planted", "growing", "ready", "harvested"] as const).map((stage) => (
               <button
-                key={f}
-                onClick={() => dispatch(setFilter(f))}
-                className={`px-3 py-1.5 text-xs font-bold rounded-md capitalize transition-all ${
-                  filter === f ? "bg-white dark:bg-slate-700 text-green-600 shadow-sm" : "text-slate-500 hover:text-slate-700"
+                key={stage}
+                onClick={() => dispatch(setFilter({ stage: stage as FieldStage | "all" }))}
+                className={`px-4 py-1.5 rounded-lg text-xs font-bold uppercase tracking-tighter transition-all ${
+                  filter.stage === stage
+                    ? "bg-white dark:bg-gray-700 shadow-sm text-primary-500"
+                    : "text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
                 }`}
               >
-                {f}
+                {stage}
               </button>
             ))}
           </div>
-          <div className="flex gap-1 border-l border-slate-200 dark:border-slate-700 ml-2 pl-2">
-            <ViewButton active={viewMode === "grid"} onClick={() => dispatch(setViewMode("grid"))} icon={<LayoutGrid size={18} />} />
-            <ViewButton active={viewMode === "table"} onClick={() => dispatch(setViewMode("table"))} icon={<Table size={18} />} />
+
+          <div className="h-8 w-px bg-gray-200 dark:border-dark-border mx-1 hidden sm:block" />
+
+          <div className="flex gap-1">
+            <ViewButton
+              active={viewMode === "grid"}
+              onClick={() => dispatch(setViewMode("grid"))}
+              icon={<LayoutGrid size={20} />}
+            />
+            <ViewButton
+              active={viewMode === "table"}
+              onClick={() => dispatch(setViewMode("table"))}
+              icon={<Table size={20} />}
+            />
           </div>
         </div>
       </section>
 
+      {/* CONTENT */}
       {filteredFields.length === 0 ? (
         <EmptyState />
       ) : viewMode === "grid" ? (
-        <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           {filteredFields.map((field) => (
-            <FieldCard 
-              key={field.id} 
-              field={field} 
-              isAdmin={isAdmin} 
-              onDelete={handleDelete} 
-              statusStyle={getStatusStyles(field.status)} 
-            />
+            <FieldCard key={field.id} field={field} isAdmin={isAdmin} onDelete={handleDelete} />
           ))}
         </div>
       ) : (
@@ -137,134 +184,99 @@ export default function Fields() {
   );
 }
 
-/* ================= SUB-COMPONENTS ================= */
+/* ================= FIELD CARD ================= */
 
-interface SubComponentProps {
-  field: Field & { agent?: { fullName: string } | null };
-  isAdmin: boolean;
-  onDelete: (id: number) => void;
-  statusStyle: string;
-}
-
-function FieldCard({ field, isAdmin, onDelete, statusStyle }: SubComponentProps) {
+function FieldCard({ field, isAdmin, onDelete }: FieldCardProps) {
   const navigate = useNavigate();
+
   return (
-    <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 shadow-sm flex flex-col h-full">
-      <div className="flex justify-between items-start mb-4">
+    <div className="group bg-white dark:bg-dark-bg border border-gray-200 dark:border-dark-border p-5 rounded-2xl shadow-sm hover:shadow-md transition-all">
+      <div className="flex justify-between items-start mb-3">
         <div>
-          <h3 className="text-lg font-bold text-slate-900 dark:text-white leading-tight">{field.name}</h3>
-          <p className="text-sm text-slate-500 font-medium">{field.cropType}</p>
+          <h3 className="font-bold text-lg text-gray-900 dark:text-white group-hover:text-primary-500 transition-colors">
+            {field.name}
+          </h3>
+          <p className="text-primary-500 text-xs font-bold uppercase tracking-wider">{field.cropType}</p>
         </div>
-        <div className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase border ${statusStyle}`}>
-          {field.status === 'at_risk' && <AlertCircle size={12} />}
-          {field.status.replace('_', ' ')}
-        </div>
+        <StageBadge stage={field.currentStage} />
       </div>
 
-      <div className="mt-auto space-y-4">
-        <div className="flex items-center gap-2 px-3 py-2 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-100 dark:border-slate-800">
-          <UserIcon size={14} className="text-slate-400" />
-          <div className="text-xs">
-            <span className="text-slate-400 block uppercase tracking-tighter font-bold">Assigned To</span>
-            <span className="text-slate-700 dark:text-slate-200 font-bold">
-              {field.agent?.fullName || "Unassigned"}
-            </span>
-          </div>
+      <div className="flex items-center gap-2 text-gray-500 dark:text-gray-400 text-sm mb-6">
+        <div className="w-6 h-6 rounded-full bg-gray-100 dark:bg-dark-surface flex items-center justify-center">
+            <UserIcon size={12} />
         </div>
+        <span className="text-xs font-medium">{field.agent?.fullName || "Unassigned"}</span>
+      </div>
 
-        <div className="flex items-center justify-between pt-4 border-t border-slate-100 dark:border-slate-800">
-          <button 
-            onClick={() => navigate(`/fields/${field.id}`)} 
-            className="flex items-center gap-1.5 text-sm font-bold text-green-600 hover:text-green-700 transition-colors"
-          >
-            <Eye size={16} />
-            Details
-          </button>
-          
-          <div className="flex gap-2">
-            {isAdmin && (
-              <>
-                <button 
-                  onClick={() => navigate(`/fields/${field.id}/assign`)} 
-                  className="p-2 text-slate-600 bg-slate-100 dark:bg-slate-800 dark:text-slate-300 rounded-lg hover:bg-green-600 hover:text-white transition-all"
-                  title="Assign Agent"
-                >
-                  <UserPlus size={18} />
-                </button>
-                <button 
-                  onClick={() => onDelete(field.id)} 
-                  className="p-2 text-slate-600 bg-slate-100 dark:bg-slate-800 dark:text-slate-300 rounded-lg hover:bg-red-600 hover:text-white transition-all"
-                  title="Delete Field"
-                >
-                  <Trash2 size={18} />
-                </button>
-              </>
-            )}
+      <div className="flex justify-between items-center pt-4 border-t border-gray-100 dark:border-dark-border">
+        <button 
+          onClick={() => navigate(`/fields/${field.id}`)}
+          className="p-2 text-gray-400 hover:text-primary-500 hover:bg-primary-500/10 rounded-lg transition-colors"
+        >
+          <Eye size={18} />
+        </button>
+
+        {isAdmin && (
+          <div className="flex gap-1">
+            <button
+              onClick={() => navigate(`/fields/${field.id}/assign`)}
+              className="p-2 text-gray-400 hover:text-blue-500 hover:bg-blue-500/10 rounded-lg transition-colors"
+            >
+              <UserPlus size={18} />
+            </button>
+            <button 
+              onClick={() => onDelete(field.id)}
+              className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-500/10 rounded-lg transition-colors"
+            >
+              <Trash2 size={18} />
+            </button>
           </div>
-        </div>
+        )}
       </div>
     </div>
   );
 }
 
-function FieldTable({ fields, isAdmin, onDelete }: { fields: (Field & { agent?: { fullName: string } | null })[]; isAdmin: boolean; onDelete: (id: number) => void }) {
+/* ================= FIELD TABLE ================= */
+
+function FieldTable({ fields, isAdmin, onDelete }: FieldTableProps) {
   const navigate = useNavigate();
+
   return (
-    <div className="overflow-x-auto rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm">
-      <table className="w-full text-sm text-left">
-        <thead className="bg-slate-50 dark:bg-slate-800/50 text-slate-500 font-bold uppercase text-[11px] tracking-wider">
-          <tr>
+    <div className="overflow-x-auto bg-white dark:bg-dark-bg rounded-2xl border border-gray-200 dark:border-dark-border shadow-sm">
+      <table className="w-full text-left border-collapse">
+        <thead>
+          <tr className="bg-gray-50 dark:bg-dark-surface/50 text-gray-500 dark:text-gray-400 uppercase text-[10px] font-black tracking-widest">
             <th className="px-6 py-4">Field Name</th>
-            <th className="px-6 py-4">Crop</th>
-            <th className="px-6 py-4">Assigned To</th>
-            <th className="px-6 py-4">Stage</th>
+            <th className="px-6 py-4">Crop Type</th>
+            <th className="px-6 py-4">Assigned Agent</th>
+            <th className="px-6 py-4">Status</th>
             <th className="px-6 py-4 text-right">Actions</th>
           </tr>
         </thead>
-        <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+        <tbody className="divide-y divide-gray-100 dark:divide-dark-border">
           {fields.map((f) => (
-            <tr key={f.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors">
-              <td className="px-6 py-4 font-bold text-slate-900 dark:text-white">{f.name}</td>
-              <td className="px-6 py-4 text-slate-500 font-medium">{f.cropType}</td>
+            <tr key={f.id} className="hover:bg-gray-50/50 dark:hover:bg-dark-surface/20 transition-colors">
+              <td className="px-6 py-4 font-bold text-gray-900 dark:text-white">{f.name}</td>
+              <td className="px-6 py-4 text-primary-500 font-semibold text-sm">{f.cropType}</td>
               <td className="px-6 py-4">
                 <div className="flex items-center gap-2">
-                  <div className="w-7 h-7 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center text-[10px] font-bold text-green-700 dark:text-green-400">
-                    {f.agent?.fullName?.charAt(0) || "?"}
-                  </div>
-                  <span className="text-slate-700 dark:text-slate-300 font-bold">{f.agent?.fullName || "Unassigned"}</span>
+                   <div className="w-7 h-7 rounded-full bg-gray-100 dark:bg-dark-surface border border-gray-200 dark:border-dark-border flex items-center justify-center text-[10px] font-bold">
+                      {f.agent?.fullName?.charAt(0) || '?'}
+                   </div>
+                   <span className="text-sm text-gray-600 dark:text-gray-300">{f.agent?.fullName || "Unassigned"}</span>
                 </div>
               </td>
               <td className="px-6 py-4">
-                <span className="inline-block px-2 py-1 rounded-md bg-slate-100 dark:bg-slate-800 capitalize font-bold text-slate-600 dark:text-slate-400 text-[10px]">
-                  {f.currentStage}
-                </span>
+                 <StageBadge stage={f.currentStage} />
               </td>
-              {/* Actions are now permanently visible, no group-hover used */}
-              <td className="px-6 py-4">
-                <div className="flex justify-end items-center gap-2">
-                  <button 
-                    onClick={() => navigate(`/fields/${f.id}`)} 
-                    className="p-1.5 text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20 rounded-md transition-colors"
-                    title="View"
-                  >
-                    <Eye size={18} />
-                  </button>
+              <td className="px-6 py-4 text-right">
+                <div className="flex justify-end gap-1">
+                  <button onClick={() => navigate(`/fields/${f.id}`)} className="p-2 text-gray-400 hover:text-primary-500 transition-colors"><Eye size={18} /></button>
                   {isAdmin && (
                     <>
-                      <button 
-                        onClick={() => navigate(`/fields/${f.id}/assign`)} 
-                        className="p-1.5 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-md transition-colors"
-                        title="Assign"
-                      >
-                        <UserPlus size={18} />
-                      </button>
-                      <button 
-                        onClick={() => onDelete(f.id)} 
-                        className="p-1.5 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-md transition-colors"
-                        title="Delete"
-                      >
-                        <Trash2 size={18} />
-                      </button>
+                      <button onClick={() => navigate(`/fields/${f.id}/assign`)} className="p-2 text-gray-400 hover:text-blue-500 transition-colors"><UserPlus size={18} /></button>
+                      <button onClick={() => onDelete(f.id)} className="p-2 text-gray-400 hover:text-red-500 transition-colors"><Trash2 size={18} /></button>
                     </>
                   )}
                 </div>
@@ -277,31 +289,52 @@ function FieldTable({ fields, isAdmin, onDelete }: { fields: (Field & { agent?: 
   );
 }
 
-const ViewButton = ({ active, onClick, icon }: { active: boolean; onClick: () => void; icon: React.ReactNode }) => (
-  <button 
-    onClick={onClick} 
-    className={`p-2 rounded-lg transition-all ${active ? "bg-green-600 text-white shadow-md" : "text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"}`}
+/* ================= HELPERS ================= */
+
+function StageBadge({ stage }: { stage: string }) {
+  const s = stage.toLowerCase();
+  let styles = "bg-gray-100 text-gray-600 dark:bg-dark-surface dark:text-gray-400";
+  
+  if (s === 'planted') styles = "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 border border-amber-200 dark:border-amber-900/20";
+  if (s === 'growing') styles = "bg-primary-500/10 text-primary-500 dark:bg-primary-500/20 dark:text-primary-400 border border-primary-500/20";
+  if (s === 'ready' || s === 'harvested') styles = "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-900/20";
+
+  return (
+    <span className={`px-3 py-1 text-[9px] font-black uppercase tracking-tighter rounded-full border ${styles}`}>
+      {stage}
+    </span>
+  );
+}
+
+const ViewButton = ({ active, onClick, icon }: ViewButtonProps) => (
+  <button
+    onClick={onClick}
+    className={`p-2 rounded-xl transition-all ${
+      active 
+        ? "bg-primary-500/10 text-primary-500 shadow-sm border border-primary-500/20" 
+        : "text-gray-400 hover:bg-gray-100 dark:hover:bg-dark-surface"
+    }`}
   >
     {icon}
   </button>
 );
 
 const EmptyState = () => (
-  <div className="flex flex-col items-center justify-center py-24 bg-slate-50 dark:bg-slate-900/50 rounded-3xl border-2 border-dashed border-slate-200 dark:border-slate-800">
-    <div className="p-4 bg-white dark:bg-slate-800 rounded-full shadow-sm mb-4">
-       <Search size={32} className="text-slate-300" />
+  <div className="text-center py-20 bg-white dark:bg-dark-bg rounded-3xl border-2 border-dashed border-gray-200 dark:border-dark-border">
+    <div className="inline-flex p-4 bg-gray-50 dark:bg-dark-surface rounded-full mb-4 text-gray-400">
+        <Search size={32} />
     </div>
-    <h3 className="text-lg font-bold text-slate-900 dark:text-white">No matching fields</h3>
-    <p className="text-slate-500 text-sm">Try adjusting your filters or search query.</p>
+    <h3 className="text-lg font-bold text-gray-900 dark:text-white">No fields found</h3>
+    <p className="text-gray-500 dark:text-gray-400">Try adjusting your filters or search terms.</p>
   </div>
 );
 
 const FieldsSkeleton = () => (
   <div className="space-y-6 animate-pulse">
-    <div className="h-10 w-48 bg-slate-200 dark:bg-slate-800 rounded-lg" />
-    <div className="h-16 w-full bg-slate-100 dark:bg-slate-800 rounded-2xl" />
-    <div className="grid md:grid-cols-3 gap-6">
-      {[1, 2, 3].map(i => <div key={i} className="h-64 bg-slate-100 dark:bg-slate-800 rounded-2xl" />)}
+    <div className="h-10 w-48 bg-gray-200 dark:bg-dark-surface rounded-lg" />
+    <div className="h-16 w-full bg-gray-200 dark:bg-dark-surface rounded-2xl" />
+    <div className="grid grid-cols-4 gap-6">
+        {[1,2,3,4].map(i => <div key={i} className="h-48 bg-gray-200 dark:bg-dark-surface rounded-2xl" />)}
     </div>
   </div>
 );

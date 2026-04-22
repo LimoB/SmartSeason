@@ -5,31 +5,37 @@ import {
   createUser,
   updateUser,
   deleteUser,
-} from "./user.controller.js";
+} from "./user.controller";
 
 import {
   adminAuth,
-  agentAuth,
+  adminOrAgentAuth, // Use this for shared access
 } from "@/middleware/bearAuth";
 
 const router: Router = Router();
 
-/* ================= PUBLIC ================= */
+/* ================= PUBLIC / INITIAL ================= */
 
-// Registration (you should ideally restrict role inside controller/service)
+// Note: If only admins should create users, change this to adminAuth
 router.post("/", createUser);
 
 /* ================= ADMIN ONLY ================= */
 
+// Only admins can see the full list of users
 router.get("/", adminAuth, getUsers);
 
+// Only admins can delete accounts
 router.delete("/:id", adminAuth, deleteUser);
 
-/* ================= USER SELF / ADMIN ================= */
+/* ================= SHARED (SELF OR ADMIN) ================= */
 
-// Admin or self (handled in controller, but middleware tightened)
-router.get("/:id", agentAuth, getUserById);
+/**
+ * These routes use adminOrAgentAuth.
+ * The controller logic inside getUserById and updateUser 
+ * ensures that if the user isn't an admin, they can only access their own ID.
+ */
+router.get("/:id", adminOrAgentAuth, getUserById);
 
-router.put("/:id", agentAuth, updateUser);
+router.put("/:id", adminOrAgentAuth, updateUser);
 
 export default router;

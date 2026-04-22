@@ -7,6 +7,20 @@ import {
   updateFieldService,
   deleteFieldService,
 } from "./field.service";
+import type { DecodedToken } from "@/middleware/bearAuth";
+
+/* ================= TYPE GUARD ================= */
+
+const ensureAuth = (
+  req: Request,
+  res: Response
+): req is Request & { user: DecodedToken } => {
+  if (!req.user) {
+    res.status(401).json({ error: "Unauthorized" });
+    return false;
+  }
+  return true;
+};
 
 /* ================= GET ALL FIELDS ================= */
 
@@ -16,12 +30,12 @@ export const getFields = async (
   next: NextFunction
 ) => {
   try {
-    const user = req.user;
+    if (!ensureAuth(req, res)) return;
 
     const data =
-      user?.role === "admin"
+      req.user.role === "admin"
         ? await getFieldsService()
-        : await getFieldsByAgentService(user!.userId);
+        : await getFieldsByAgentService(req.user.userId);
 
     return res.json(data);
   } catch (error) {
@@ -37,6 +51,8 @@ export const getFieldById = async (
   next: NextFunction
 ) => {
   try {
+    if (!ensureAuth(req, res)) return;
+
     const id = Number(req.params.id);
 
     if (isNaN(id)) {
@@ -49,12 +65,11 @@ export const getFieldById = async (
       return res.status(404).json({ error: "Field not found" });
     }
 
-    // Access control
-    if (
-      req.user?.role !== "admin" &&
-      field.assignedAgentId !== req.user?.userId
-    ) {
-      return res.status(403).json({ error: "Access denied to this field" });
+    const isAdmin = req.user.role === "admin";
+    const isOwner = field.assignedAgentId === req.user.userId;
+
+    if (!isAdmin && !isOwner) {
+      return res.status(403).json({ error: "Access denied" });
     }
 
     return res.json(field);
@@ -71,7 +86,9 @@ export const createField = async (
   next: NextFunction
 ) => {
   try {
-    if (req.user?.role !== "admin") {
+    if (!ensureAuth(req, res)) return;
+
+    if (req.user.role !== "admin") {
       return res.status(403).json({ error: "Only admin can create fields" });
     }
 
@@ -91,6 +108,8 @@ export const updateField = async (
   next: NextFunction
 ) => {
   try {
+    if (!ensureAuth(req, res)) return;
+
     const id = Number(req.params.id);
 
     if (isNaN(id)) {
@@ -103,23 +122,19 @@ export const updateField = async (
       return res.status(404).json({ error: "Field not found" });
     }
 
-    // Admin full access
-    const isAdmin = req.user?.role === "admin";
-
-    // Agent can only update assigned fields
-    const isOwner =
-      field.assignedAgentId === req.user?.userId;
+    const isAdmin = req.user.role === "admin";
+    const isOwner = field.assignedAgentId === req.user.userId;
 
     if (!isAdmin && !isOwner) {
       return res.status(403).json({ error: "Access denied" });
     }
 
-    /**
-     * IMPORTANT:
-     * Stage updates are blocked in service layer
-     * so we ensure clean payload here
-     */
-    const { currentStage, ...safeBody } = req.body;
+    let safeBody = { ...req.body };
+
+    if (!isAdmin) {
+      delete safeBody.assignedAgentId;
+      delete safeBody.currentStage;
+    }
 
     const updated = await updateFieldService(id, safeBody);
 
@@ -137,6 +152,8 @@ export const deleteField = async (
   next: NextFunction
 ) => {
   try {
+    if (!ensureAuth(req, res)) return;
+
     const id = Number(req.params.id);
 
     if (isNaN(id)) {
@@ -149,7 +166,7 @@ export const deleteField = async (
       return res.status(404).json({ error: "Field not found" });
     }
 
-    if (req.user?.role !== "admin") {
+    if (req.user.role !== "admin") {
       return res.status(403).json({ error: "Only admin can delete fields" });
     }
 
