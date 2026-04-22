@@ -2,22 +2,22 @@
 
 ## Overview
 
-SmartSeason is a full-stack agricultural field monitoring system designed to track crop progress across multiple fields during a growing season.
+SmartSeason is a full-stack agricultural field monitoring system designed to track crop progress across multiple fields throughout a growing season.
 
-It enables:
+The system enables:
 
-* Coordinators (Admins) to manage fields and field agents
-* Field Agents to update crop progress and add observations
-* Real-time dashboard insights for monitoring field activity
+* Coordinators (Admins) to manage fields and assign field agents
+* Field Agents to submit crop progress updates and field observations
+* Real-time dashboard insights for monitoring agricultural activity
 
 ---
 
 ## Key Features
 
-### Authentication & Roles
+### Authentication and Role Management
 
-* JWT-based authentication
-* Role-based access control:
+* JWT-based authentication system
+* Role-based access control with two roles:
 
   * Admin (Coordinator)
   * Field Agent
@@ -27,15 +27,15 @@ It enables:
 
 ### Field Management
 
-* Create and manage agricultural fields
-* Assign fields to specific agents
+* Create, update, and manage agricultural fields
+* Assign fields to specific field agents
 * Track crop lifecycle per field
-* Store essential field data:
+* Store and manage key field data:
 
-  * Name
+  * Field name
   * Crop type
   * Planting date
-  * Current stage
+  * Current growth stage
 
 ---
 
@@ -43,21 +43,21 @@ It enables:
 
 Field Agents can:
 
-* Update field growth stage
-* Add notes and observations
-* Submit progress updates per field
+* Submit crop growth stage updates
+* Add notes and field observations
+* Track progress per assigned field
 
 Admins can:
 
-* View all fields
-* Monitor updates across all agents
-* Track field performance and activity history
+* View all fields across the system
+* Monitor updates from all agents
+* Track field performance and historical activity
 
 ---
 
-### Field Lifecycle
+### Crop Lifecycle
 
-The system uses a simple crop lifecycle:
+The system models a simplified crop lifecycle:
 
 Planted → Growing → Ready → Harvested
 
@@ -65,15 +65,13 @@ Planted → Growing → Ready → Harvested
 
 ## Field Status Logic
 
-Each field has a computed status based on its lifecycle and activity.
+Each field status is computed dynamically based on lifecycle stage and update activity.
 
-| Status    | Description                                             |
-| --------- | ------------------------------------------------------- |
-| Active    | Field is progressing normally (Planted, Growing, Ready) |
-| At Risk   | Field shows delays, missing updates, or overdue harvest |
-| Completed | Field has been harvested                                |
-
-Status is computed using field stage and update activity patterns.
+| Status    | Description                                                             |
+| --------- | ----------------------------------------------------------------------- |
+| Active    | Field is progressing normally through Planted, Growing, or Ready stages |
+| At Risk   | Field shows delays, missing updates, or overdue harvest activity        |
+| Completed | Field has been fully harvested                                          |
 
 ---
 
@@ -100,14 +98,10 @@ Status is computed using field stage and update activity patterns.
 ## System Architecture
 
 Frontend (React + RTK Query)
-↓
-REST API (Express)
-↓
-Service Layer (Business Logic)
-↓
-Drizzle ORM
-↓
-PostgreSQL
+→ REST API (Express)
+→ Service Layer (Business Logic)
+→ Drizzle ORM
+→ PostgreSQL
 
 ---
 
@@ -201,28 +195,28 @@ pnpm dev
 
 ## Design Decisions
 
-* Modular backend structure (auth, users, fields, updates, dashboard)
-* Drizzle ORM for type-safe database access
-* RTK Query for efficient API caching and state management
-* Immutable update logs for audit history tracking
-* Role-based access enforced at middleware and controller level
+* Modular backend architecture separating auth, users, fields, updates, and dashboard modules
+* Drizzle ORM used for type-safe database operations
+* RTK Query for efficient API caching and state synchronization
+* Immutable update logs for audit and traceability
+* Role-based access enforced at middleware and service layers
 
 ---
 
 ## Assumptions
 
-* One field is assigned to one agent at a time
+* Each field is assigned to only one agent at a time
 * Admin has full system access
 * Agents can only update assigned fields
-* Field updates are immutable for historical tracking
+* Field updates are immutable for audit history
 
 ---
 
 ## Future Improvements
 
-* Geo-mapping of fields
-* Image uploads for field reports
-* Notification system for updates
+* Geo-mapping and visualization of fields
+* Image uploads for field reporting
+* Notification system for updates and alerts
 * Real-time updates using WebSockets
 * Advanced analytics dashboard with predictive insights
 
@@ -246,9 +240,9 @@ SmartSeason/
 
 ## Conclusion
 
-SmartSeason is a full-stack field monitoring system designed to demonstrate practical software engineering skills including:
+SmartSeason demonstrates practical full-stack engineering skills, including:
 
-* Clean architecture and modular design
-* Secure authentication and role-based access control
+* Clean and modular system architecture
+* Secure authentication and role-based authorization
 * Real-world agricultural workflow modeling
-* Scalable backend and modern frontend integration
+* Scalable backend design with modern frontend integration
