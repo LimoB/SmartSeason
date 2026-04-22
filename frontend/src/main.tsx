@@ -7,37 +7,42 @@ import { Provider } from "react-redux";
 import { store } from "./app/store";
 
 // Toast
-import { ToastContainer, Slide } from "react-toastify"; // Added Slide for animation
+import { ToastContainer, Slide } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
+// Global Styles
 import "./index.css";
 
-ReactDOM.createRoot(document.getElementById("root")!).render(
+const rootElement = document.getElementById("root");
+
+if (!rootElement) {
+  throw new Error("Failed to find the root element");
+}
+
+ReactDOM.createRoot(rootElement).render(
   <React.StrictMode>
     <Provider store={store}>
       <App />
 
-      {/* ================= GLOBAL TOAST (COMPACT & ANIMATED) ================= */}
+      {/* ================= GLOBAL TOAST (PROD OPTIMIZED) ================= */}
       <ToastContainer
         position="top-right"
         autoClose={2500}
-        hideProgressBar={true}   // Removed the progress "count line"
-        newestOnTop
+        hideProgressBar={true}
+        newestOnTop={true}
         closeOnClick
         rtl={false}
         pauseOnFocusLoss
         draggable
         pauseOnHover
         theme="colored"
-        transition={Slide}       // Modern slide animation
+        transition={Slide}
         limit={3}
         toastStyle={{
-          borderRadius: "8px",
-          fontSize: "12.5px",    // Reduced size
+          borderRadius: "12px",
+          fontSize: "13px",
           fontWeight: 600,
-          minHeight: "45px",     // Smaller vertical footprint
-          padding: "6px 10px",   // Tighter padding
-          maxWidth: "200px",     // Reduced width
+          boxShadow: "0 10px 15px -3px rgba(0, 0, 0, 0.1)",
         }}
       />
     </Provider>
