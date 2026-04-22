@@ -6,9 +6,9 @@ import { toast } from "react-toastify";
 import {
   useGetFieldByIdQuery,
   useUpdateFieldMutation,
-} from "@/features/fields/fieldApi";
+} from "../../features/fields/fieldApi";
 
-import type { Field } from "@/types/types";
+import type { Field } from "../../types/types";
 
 /* ================= TYPES ================= */
 type ApiError = {
@@ -41,20 +41,20 @@ export default function EditField() {
 
   if (fieldLoading) {
     return (
-      <div className="flex flex-col items-center justify-center p-20 space-y-4">
+      <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-4">
         <Loader2 className="w-10 h-10 text-green-600 animate-spin" />
-        <p className="text-slate-500 font-medium">Loading field data...</p>
+        <p className="text-slate-400 font-black uppercase tracking-widest text-[10px]">Retrieving Sector Data...</p>
       </div>
     );
   }
 
   if (isError || !field) {
     return (
-      <div className="p-10 text-center space-y-4">
-        <p className="text-red-500 font-bold">Error: Field not found.</p>
+      <div className="max-w-md mx-auto mt-20 text-center p-10 bg-white dark:bg-slate-900 rounded-[2.5rem] border border-slate-200 dark:border-slate-800">
+        <p className="text-red-500 font-bold mb-4">Error: Field not found.</p>
         <button
           onClick={() => navigate("/fields")}
-          className="text-green-600 hover:underline"
+          className="px-6 py-2 bg-slate-100 dark:bg-slate-800 rounded-xl font-bold text-sm"
         >
           Return to Fields
         </button>
@@ -63,26 +63,32 @@ export default function EditField() {
   }
 
   return (
-    <div className="max-w-2xl mx-auto space-y-6 p-4">
-      <button
-        onClick={() => navigate(-1)}
-        className="group flex items-center gap-2 text-sm font-medium text-slate-500 hover:text-green-600 transition-colors"
-      >
-        <ArrowLeft size={18} className="group-hover:-translate-x-1 transition-transform" />
-        Cancel & Back
-      </button>
+    <div className="w-full max-w-3xl mx-auto space-y-6 md:space-y-8 pb-20">
+      {/* NAVIGATION */}
+      <div className="px-3 md:px-0">
+        <button
+          onClick={() => navigate(-1)}
+          className="group flex items-center gap-3 text-xs font-black uppercase tracking-widest text-slate-400 hover:text-green-600 transition-colors"
+        >
+          <div className="p-2 rounded-lg bg-slate-100 dark:bg-slate-800 group-hover:bg-green-600 group-hover:text-white transition-all">
+            <ArrowLeft size={16} />
+          </div>
+          Cancel Editing
+        </button>
+      </div>
 
-      <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
-        <div className="p-6 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30 flex items-center gap-3">
-          <div className="p-2 bg-green-100 dark:bg-green-900/30 rounded-lg">
-            <Wheat className="text-green-600" size={24} />
+      <div className="mx-3 md:mx-0 bg-white dark:bg-slate-900 rounded-3xl md:rounded-[3rem] border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
+        {/* HEADER */}
+        <div className="p-6 md:p-10 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30 flex items-center gap-4">
+          <div className="p-3 bg-green-600 text-white rounded-2xl shadow-lg shadow-green-600/20">
+            <Wheat size={24} />
           </div>
           <div>
-            <h1 className="text-2xl font-extrabold text-slate-900 dark:text-white">
-              Edit Field
+            <h1 className="text-xl md:text-2xl font-black text-slate-900 dark:text-white tracking-tight">
+              Edit Field Details
             </h1>
-            <p className="text-sm text-slate-500">
-              Update crop details and growth stages
+            <p className="text-xs md:text-sm text-slate-500 dark:text-slate-400 font-medium">
+              Modify operational parameters for <span className="text-green-600 font-bold">{field.name}</span>
             </p>
           </div>
         </div>
@@ -109,12 +115,8 @@ function EditFieldForm({
     name: field.name || "",
     cropType: field.cropType || "",
     location: field.location || "",
-    plantingDate: field.plantingDate
-      ? field.plantingDate.split("T")[0]
-      : "",
-    expectedHarvestDate: field.expectedHarvestDate
-      ? field.expectedHarvestDate.split("T")[0]
-      : "",
+    plantingDate: field.plantingDate ? field.plantingDate.split("T")[0] : "",
+    expectedHarvestDate: field.expectedHarvestDate ? field.expectedHarvestDate.split("T")[0] : "",
   });
 
   const handleChange = (
@@ -126,13 +128,7 @@ function EditFieldForm({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
     try {
-      /**
-       * FIX: We use '|| undefined' to satisfy the TypeScript error.
-       * If formData.plantingDate is an empty string, it becomes undefined,
-       * which is exactly what Partial<BaseFieldInput> expects.
-       */
       const payload = {
         id: field.id,
         name: formData.name,
@@ -142,90 +138,99 @@ function EditFieldForm({
         expectedHarvestDate: formData.expectedHarvestDate || undefined,
       };
 
-      console.log("Submitting field update payload:", payload);
-
       await onUpdate(payload).unwrap();
-
-      toast.success("Field updated successfully!");
+      toast.success("Sector updated successfully");
       navigate(`/fields/${field.id}`);
     } catch (err: unknown) {
       const error = err as ApiError;
-      console.error("Update error:", err);
-      toast.error(error?.data?.message || "Failed to update field");
+      toast.error(error?.data?.message || "Failed to update sector");
     }
   };
 
+  const inputStyles = "w-full px-4 py-3.5 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-green-500/50 focus:border-green-600 rounded-xl outline-none transition-all text-sm font-semibold text-slate-900 dark:text-white";
+  const labelStyles = "text-[10px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500 ml-1";
+
   return (
-    <form onSubmit={handleSubmit} className="p-8 space-y-6">
+    <form onSubmit={handleSubmit} className="p-6 md:p-10 space-y-8">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 
         <div className="md:col-span-2 space-y-2">
-          <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">Field Name</label>
+          <label className={labelStyles}>Field Identification Name</label>
           <input
             required
             type="text"
             name="name"
             value={formData.name}
             onChange={handleChange}
-            className="w-full px-4 py-3 border rounded-xl dark:bg-slate-800 dark:border-slate-700 dark:text-white"
+            placeholder="e.g., North Sector A-1"
+            className={inputStyles}
           />
         </div>
 
         <div className="space-y-2">
-          <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">Crop Type</label>
+          <label className={labelStyles}>Primary Crop Type</label>
           <input
             required
             type="text"
             name="cropType"
             value={formData.cropType}
             onChange={handleChange}
-            className="w-full px-4 py-3 border rounded-xl dark:bg-slate-800 dark:border-slate-700 dark:text-white"
+            placeholder="e.g., Maize, Wheat"
+            className={inputStyles}
           />
         </div>
 
-        <div className="md:col-span-2 space-y-2">
-          <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">Location</label>
+        <div className="space-y-2">
+          <label className={labelStyles}>Geographic Location</label>
           <input
             type="text"
             name="location"
             value={formData.location}
             onChange={handleChange}
-            className="w-full px-4 py-3 border rounded-xl dark:bg-slate-800 dark:border-slate-700 dark:text-white"
+            placeholder="e.g., Eldoret North"
+            className={inputStyles}
           />
         </div>
 
         <div className="space-y-2">
-          <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">Planting Date</label>
+          <label className={labelStyles}>Planting Date</label>
           <input
             type="date"
             name="plantingDate"
             value={formData.plantingDate}
             onChange={handleChange}
-            className="w-full px-4 py-3 border rounded-xl dark:bg-slate-800 dark:border-slate-700 dark:text-white"
+            className={inputStyles}
           />
         </div>
 
         <div className="space-y-2">
-          <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">Expected Harvest</label>
+          <label className={labelStyles}>Expected Harvest</label>
           <input
             type="date"
             name="expectedHarvestDate"
             value={formData.expectedHarvestDate}
             onChange={handleChange}
-            className="w-full px-4 py-3 border rounded-xl dark:bg-slate-800 dark:border-slate-700 dark:text-white"
+            className={inputStyles}
           />
         </div>
 
       </div>
 
-      <div className="pt-4">
+      <div className="pt-6 border-t border-slate-100 dark:border-slate-800 flex flex-col md:flex-row gap-4">
+        <button
+          type="button"
+          onClick={() => navigate(-1)}
+          className="flex-1 py-4 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 font-bold rounded-2xl hover:bg-slate-200 dark:hover:bg-slate-700 transition-all text-sm"
+        >
+          Discard Changes
+        </button>
         <button
           type="submit"
           disabled={isUpdating}
-          className="w-full py-4 bg-green-600 text-white font-bold rounded-2xl hover:bg-green-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+          className="flex-[2] py-4 bg-green-600 text-white font-black uppercase tracking-widest rounded-2xl shadow-lg shadow-green-600/20 hover:bg-green-700 transition-all disabled:opacity-50 flex items-center justify-center gap-3 text-xs"
         >
-          {isUpdating && <Loader2 className="w-5 h-5 animate-spin" />}
-          {isUpdating ? "Saving Changes..." : "Save Changes"}
+          {isUpdating ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+          {isUpdating ? "Saving Sector Data..." : "Commit Changes"}
         </button>
       </div>
     </form>
