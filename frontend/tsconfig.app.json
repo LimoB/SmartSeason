@@ -7,14 +7,15 @@
     "types": ["vite/client"],
     "skipLibCheck": true,
 
-    /* ================= PATH ALIASES ================= */
-    "baseUrl": ".",
+    /* ================= FIXED PATHS ================= */
+    // 1. Remove "baseUrl" completely
+    // 2. Change paths to use "./"
     "paths": {
-      "@/*": ["src/*"],
-      "@app/*": ["src/app/*"],
-      "@features/*": ["src/features/*"],
-      "@services/*": ["src/services/*"],
-      "@types/*": ["src/types/*"]
+      "@/*": ["./src/*"],
+      "@app/*": ["./src/app/*"],
+      "@features/*": ["./src/features/*"],
+      "@services/*": ["./src/services/*"],
+      "@types/*": ["./src/types/*"]
     },
 
     /* ================= BUILD MODE ================= */
