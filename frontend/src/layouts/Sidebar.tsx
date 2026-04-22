@@ -165,12 +165,6 @@ export default function Sidebar() {
           </div>
         </div>
       </aside>
-
-      {/* IMPORTANT: The spacer below ensures the dashboard content doesn't hide under the sidebar.
-          If your dashboard still has "right padding", ensure the parent container of the dashboard 
-          doesn't have a fixed max-width or excess padding.
-      */}
-      <div className={`transition-all duration-500 ease-in-out ${isExpanded ? "w-72" : "w-24"}`} />
     </>
   );
 }

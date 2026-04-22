@@ -11,12 +11,12 @@ export default function MainLayout() {
       transition-colors duration-300
       flex
     ">
-
       {/* ================= SIDEBAR ================= */}
       <Sidebar />
 
       {/* ================= MAIN CONTENT AREA ================= */}
-      <div className="flex-1 flex flex-col ml-20 md:ml-64 transition-all duration-300">
+      {/* ml-24 matches Sidebar w-24 | lg:ml-72 matches Sidebar w-72 */}
+      <div className="flex-1 flex flex-col ml-24 lg:ml-72 transition-all duration-500 ease-in-out">
 
         {/* ================= TOP NAVBAR ================= */}
         <Navbar />
@@ -27,7 +27,8 @@ export default function MainLayout() {
         {/* ================= PAGE CONTENT ================= */}
         <main className="flex-1 px-4 sm:px-6 py-6">
 
-          <div className="max-w-7xl mx-auto">
+          {/* REMOVED max-w-7xl and mx-auto to let content fill available width */}
+          <div className="w-full">
 
             {/* ================= PAGE WRAPPER ================= */}
             <div className="
@@ -37,10 +38,9 @@ export default function MainLayout() {
               p-6 sm:p-8
               shadow-sm
               min-h-[70vh]
+              w-full
             ">
-
               <Outlet />
-
             </div>
 
           </div>

@@ -2,6 +2,7 @@ import { Outlet, Link } from "react-router-dom";
 
 export default function AuthLayout() {
   return (
+    // "items-center justify-center" is GOOD for Login, but BAD for Dashboards.
     <div className="
       min-h-screen flex items-center justify-center 
       bg-light-bg dark:bg-dark-bg 
@@ -13,28 +14,29 @@ export default function AuthLayout() {
         w-full max-w-md 
         bg-white dark:bg-dark-surface 
         border border-light-border dark:border-dark-border 
-        rounded-2xl p-6 shadow-lg
-        transition
+        rounded-2xl p-8 shadow-xl
+        transition-all duration-300
       ">
 
         {/* ================= LOGO ================= */}
-        <div className="text-center mb-6">
-
+        <div className="text-center mb-8">
           <Link
             to="/"
-            className="text-primary-500 text-2xl font-bold tracking-wide"
+            className="text-green-600 dark:text-green-500 text-3xl font-black tracking-tighter"
           >
             SmartSeason
           </Link>
 
-          <p className="text-light-muted dark:text-dark-muted text-sm mt-1">
+          <p className="text-slate-500 dark:text-slate-400 text-xs uppercase tracking-[0.2em] font-bold mt-2">
             Field Monitoring System
           </p>
-
         </div>
 
         {/* ================= PAGE CONTENT ================= */}
-        <Outlet />
+        {/* This renders your Login / Register forms */}
+        <div className="w-full">
+          <Outlet />
+        </div>
 
       </div>
     </div>
