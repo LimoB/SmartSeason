@@ -1,7 +1,7 @@
 import express, { Application, Request, Response } from "express";
 import cors from "cors";
 
-// ROUTES (DEFAULT IMPORTS)
+// ROUTES
 import authRouter from "./modules/auth/auth.route";
 import userRouter from "./modules/users/user.route";
 import fieldRouter from "./modules/fields/field.route";
@@ -11,14 +11,32 @@ import dashboardRouter from "./modules/dashboard/dashboard.route";
 const app: Application = express();
 
 /* ============================================================
-   CORS
+   CORS CONFIG (FIXED FOR DEV + PRODUCTION)
 ============================================================ */
+
+const allowedOrigins = [
+  "http://localhost:5173",
+  "https://smartseasonlee.netlify.app"
+];
+
 app.use(
   cors({
-    origin: "http://localhost:5173",
+    origin: (origin, callback) => {
+      // allow REST tools like Postman (no origin)
+      if (!origin) return callback(null, true);
+
+      if (allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+
+      return callback(new Error("Not allowed by CORS"));
+    },
     credentials: true,
   })
 );
+
+/* Handle preflight requests */
+app.options("*", cors());
 
 /* ============================================================
    BODY PARSING
