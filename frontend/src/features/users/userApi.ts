@@ -1,5 +1,5 @@
 import { baseApi } from "../../services/baseApi";
-import type { User } from "@/types/types";
+import type { User } from "../../types/types";
 
 /* ================= TYPES ================= */
 

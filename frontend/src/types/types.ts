@@ -1,12 +1,7 @@
-/* ================= ENUMS ================= */
+ /* ================= ENUMS ================= */
 
-// Matches pgEnum("user_role")
 export type UserRole = "admin" | "field_agent";
-
-// Matches pgEnum("field_stage")
 export type FieldStage = "planted" | "growing" | "ready" | "harvested";
-
-// Backend-only virtual property for UI logic
 export type FieldStatus = "active" | "at_risk" | "completed";
 
 
@@ -16,9 +11,9 @@ export type User = {
   id: number;
   fullName: string;
   email: string;
-  password?: string; // Kept optional for safety
+  password?: string;
   role: UserRole;
-  createdAt: string; // ISO String from timestamp
+  createdAt: string;
 };
 
 
@@ -28,23 +23,23 @@ export type Field = {
   id: number;
   name: string;
   cropType: string;
-  location: string | null; // schema allows null
-
-  plantingDate: string; // ISO String
-  expectedHarvestDate: string | null; // schema allows null
-
-  currentStage: FieldStage;
-  
-  /** * Virtual property computed in the backend service layer 
-   * based on dates and currentStage.
-   */
-  status: FieldStatus; 
 
   /**
-   * References users.id. 
-   * Null if no agent is assigned.
+   * Backend allows null → keep it explicit
    */
-  assignedAgentId: number | null; 
+  location: string | null;
+
+  plantingDate: string;
+  expectedHarvestDate: string | null;
+
+  currentStage: FieldStage;
+
+  /**
+   * Computed backend value
+   */
+  status: FieldStatus;
+
+  assignedAgentId: number | null;
 
   createdAt: string;
   updatedAt: string;
@@ -59,14 +54,23 @@ export type FieldUpdate = {
   agentId: number;
 
   stage: FieldStage;
-  notes: string | null; // schema: .notes: text("notes")
+  notes: string | null;
 
   createdAt: string;
 };
 
-/* ================= API INPUT TYPES ================= */
-// Useful for Create/Update forms
 
-export type CreateFieldInput = Omit<Field, "id" | "status" | "createdAt" | "updatedAt">;
+/* ================= FORM TYPES ================= */
+/**
+ * IMPORTANT FIX:
+ * We convert backend null → frontend optional handling
+ */
+export type CreateFieldInput = Omit<
+  Field,
+  "id" | "status" | "createdAt" | "updatedAt"
+> & {
+  location?: string | null;
+  expectedHarvestDate?: string | null;
+};
 
 export type UpdateFieldInput = Partial<CreateFieldInput>;

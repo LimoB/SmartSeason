@@ -7,13 +7,17 @@
     "types": ["vite/client"],
     "skipLibCheck": true,
 
-    /* ================= ALIASES (FIX) ================= */
+    /* ================= PATH ALIASES ================= */
     "baseUrl": ".",
     "paths": {
-      "@/*": ["src/*"]
+      "@/*": ["src/*"],
+      "@app/*": ["src/app/*"],
+      "@features/*": ["src/features/*"],
+      "@services/*": ["src/services/*"],
+      "@types/*": ["src/types/*"]
     },
 
-    /* ================= Bundler mode ================= */
+    /* ================= BUILD MODE ================= */
     "moduleResolution": "bundler",
     "allowImportingTsExtensions": true,
     "verbatimModuleSyntax": true,
@@ -21,7 +25,12 @@
     "noEmit": true,
     "jsx": "react-jsx",
 
-    /* ================= Linting ================= */
+    /* ================= SAFETY ================= */
+    "strict": true,
+    "noImplicitAny": true,
+    "strictNullChecks": true,
+
+    /* ================= LINTING ================= */
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "erasableSyntaxOnly": true,

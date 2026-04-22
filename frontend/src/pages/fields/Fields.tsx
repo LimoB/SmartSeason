@@ -14,16 +14,16 @@ import {
 import {
   useGetFieldsQuery,
   useDeleteFieldMutation,
-} from "@/features/fields/fieldApi";
-import { useGetUsersQuery } from "@/features/users/userApi";
-import { useAppDispatch, useAppSelector } from "@/app/hooks";
+} from "../../features/fields/fieldApi";
+import { useGetUsersQuery } from "../../features/users/userApi";
+import { useAppDispatch, useAppSelector } from "../../app/hooks";
 import {
   setFilter,
   setSearch,
   setViewMode,
-} from "@/features/fields/fieldSlice";
+} from "../../features/fields/fieldSlice";
 
-import type { Field, User, FieldStage } from "@/types/types";
+import type { Field, User, FieldStage } from "../../types/types";
 
 /* ================= TYPES ================= */
 type FieldWithAgent = Field & {

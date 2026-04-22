@@ -9,7 +9,7 @@ import {
   X,
 } from "lucide-react";
 
-import { useAppSelector } from "@/app/hooks";
+import { useAppSelector } from "../app/hooks";
 
 export default function Sidebar() {
   const [open, setOpen] = useState(true);

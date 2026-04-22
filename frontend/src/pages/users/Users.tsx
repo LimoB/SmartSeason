@@ -10,11 +10,11 @@ import {
   AlertCircle 
 } from "lucide-react";
 
-import { useAppDispatch, useAppSelector } from "@/app/hooks";
-import { useGetUsersQuery, useDeleteUserMutation } from "@/features/users/userApi";
-import { setSearch, setRoleFilter } from "@/features/users/userSlice";
-import type { User } from "@/types/types";
-import type { RoleFilter } from "@/features/users/userSlice";
+import { useAppDispatch, useAppSelector } from "../../app/hooks";
+import { useGetUsersQuery, useDeleteUserMutation } from "../../features/users/userApi";
+import { setSearch, setRoleFilter } from "../../features/users/userSlice";
+import type { User } from "../../types/types";
+import type { RoleFilter } from "../../features/users/userSlice";
 
 export default function Users() {
   const navigate = useNavigate();
