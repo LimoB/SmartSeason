@@ -124,101 +124,95 @@ function EditFieldForm({
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-//   /* ================= SAFE DATE HANDLER ================= */
-//   const safeDate = (value: string | null | undefined) => {
-//     if (!value) return null;
-//     const date = new Date(value);
-//     return isNaN(date.getTime()) ? null : date;
-//   };
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
 
- const handleSubmit = async (e: React.FormEvent) => {
-  e.preventDefault();
+    try {
+      /**
+       * FIX: We use '|| undefined' to satisfy the TypeScript error.
+       * If formData.plantingDate is an empty string, it becomes undefined,
+       * which is exactly what Partial<BaseFieldInput> expects.
+       */
+      const payload = {
+        id: field.id,
+        name: formData.name,
+        cropType: formData.cropType,
+        location: formData.location || undefined,
+        plantingDate: formData.plantingDate || undefined,
+        expectedHarvestDate: formData.expectedHarvestDate || undefined,
+      };
 
-  try {
-    const payload = {
-      id: field.id,
-      name: formData.name,
-      cropType: formData.cropType,
-      location: formData.location,
+      console.log("Submitting field update payload:", payload);
 
-      // FIX: send STRING not Date
-      plantingDate: formData.plantingDate || null,
-      expectedHarvestDate: formData.expectedHarvestDate || null,
-    };
+      await onUpdate(payload).unwrap();
 
-    console.log("Submitting field update payload:", payload);
-
-    await onUpdate(payload).unwrap();
-
-    toast.success("Field updated successfully!");
-    navigate(`/fields/${field.id}`);
-  } catch (err: unknown) {
-    const error = err as ApiError;
-
-    console.error("Update error:", err);
-
-    toast.error(error?.data?.message || "Failed to update field");
-  }
-};
+      toast.success("Field updated successfully!");
+      navigate(`/fields/${field.id}`);
+    } catch (err: unknown) {
+      const error = err as ApiError;
+      console.error("Update error:", err);
+      toast.error(error?.data?.message || "Failed to update field");
+    }
+  };
 
   return (
     <form onSubmit={handleSubmit} className="p-8 space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 
         <div className="md:col-span-2 space-y-2">
-          <label>Field Name</label>
+          <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">Field Name</label>
           <input
             required
             type="text"
             name="name"
             value={formData.name}
             onChange={handleChange}
-            className="w-full px-4 py-3 border rounded-xl"
+            className="w-full px-4 py-3 border rounded-xl dark:bg-slate-800 dark:border-slate-700 dark:text-white"
           />
         </div>
 
         <div className="space-y-2">
-          <label>Crop Type</label>
+          <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">Crop Type</label>
           <input
             required
             type="text"
             name="cropType"
             value={formData.cropType}
             onChange={handleChange}
-            className="w-full px-4 py-3 border rounded-xl"
+            className="w-full px-4 py-3 border rounded-xl dark:bg-slate-800 dark:border-slate-700 dark:text-white"
           />
         </div>
 
         <div className="md:col-span-2 space-y-2">
-          <label>Location</label>
+          <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">Location</label>
           <input
             type="text"
             name="location"
             value={formData.location}
             onChange={handleChange}
-            className="w-full px-4 py-3 border rounded-xl"
+            className="w-full px-4 py-3 border rounded-xl dark:bg-slate-800 dark:border-slate-700 dark:text-white"
           />
         </div>
 
         <div className="space-y-2">
-          <label>Planting Date</label>
+          <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">Planting Date</label>
           <input
             type="date"
             name="plantingDate"
             value={formData.plantingDate}
             onChange={handleChange}
-            className="w-full px-4 py-3 border rounded-xl"
+            className="w-full px-4 py-3 border rounded-xl dark:bg-slate-800 dark:border-slate-700 dark:text-white"
           />
         </div>
 
         <div className="space-y-2">
-          <label>Expected Harvest</label>
+          <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">Expected Harvest</label>
           <input
             type="date"
             name="expectedHarvestDate"
             value={formData.expectedHarvestDate}
             onChange={handleChange}
-            className="w-full px-4 py-3 border rounded-xl"
+            className="w-full px-4 py-3 border rounded-xl dark:bg-slate-800 dark:border-slate-700 dark:text-white"
           />
         </div>
 
@@ -228,8 +222,9 @@ function EditFieldForm({
         <button
           type="submit"
           disabled={isUpdating}
-          className="w-full py-4 bg-green-600 text-white font-bold rounded-2xl disabled:opacity-50"
+          className="w-full py-4 bg-green-600 text-white font-bold rounded-2xl hover:bg-green-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
         >
+          {isUpdating && <Loader2 className="w-5 h-5 animate-spin" />}
           {isUpdating ? "Saving Changes..." : "Save Changes"}
         </button>
       </div>
