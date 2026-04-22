@@ -25,20 +25,42 @@ export const updateApi = baseApi.injectEndpoints({
 
     // ================= CREATE UPDATE =================
     createUpdate: builder.mutation<FieldUpdate, CreateUpdateRequest>({
-      query: (data) => ({
-        url: "/updates",
-        method: "POST",
-        body: data,
-      }),
-      transformResponse: (response: ApiResponse<FieldUpdate>) => response.data,
-      invalidatesTags: ["Field", "Update"],
+      query: (data) => {
+        console.log("Creating update:", data);
+        return {
+          url: "/updates",
+          method: "POST",
+          body: data,
+        };
+      },
+
+      transformResponse: (response: ApiResponse<FieldUpdate>) => {
+        console.log("Create response:", response);
+        return response.data;
+      },
+
+      // invalidate ONLY that field's updates
+      invalidatesTags: (_result, _error, body) => [
+        { type: "Update", id: body.fieldId },
+      ],
     }),
 
     // ================= GET FIELD UPDATES =================
     getFieldUpdates: builder.query<FieldUpdate[], number>({
-      query: (fieldId) => `/updates/field/${fieldId}`,
-      transformResponse: (response: ApiResponse<FieldUpdate[]>) => response.data,
-      providesTags: ["Update"],
+      query: (fieldId) => {
+        console.log("Fetching updates for fieldId:", fieldId);
+        return `/updates/field/${fieldId}`;
+      },
+
+      transformResponse: (response: ApiResponse<FieldUpdate[]>) => {
+        console.log("Updates response:", response);
+        return response.data;
+      },
+
+      // cache per field
+      providesTags: (_result, _error, fieldId) => [
+        { type: "Update", id: fieldId },
+      ],
     }),
 
   }),

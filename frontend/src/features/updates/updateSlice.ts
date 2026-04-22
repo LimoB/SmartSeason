@@ -29,7 +29,27 @@ const updateSlice = createSlice({
 
     // ================= SELECT FIELD =================
     setSelectedField: (state, action: PayloadAction<number | null>) => {
-      state.selectedFieldId = action.payload;
+      const fieldId = action.payload;
+
+      console.log("setSelectedField called with:", fieldId);
+
+      // ensure valid number or null
+      if (fieldId === null) {
+        state.selectedFieldId = null;
+        return;
+      }
+
+      if (typeof fieldId !== "number" || isNaN(fieldId)) {
+        console.warn("Invalid fieldId provided to setSelectedField:", fieldId);
+        return;
+      }
+
+      // if switching fields, reset filter for clarity
+      if (state.selectedFieldId !== fieldId) {
+        state.stageFilter = "all";
+      }
+
+      state.selectedFieldId = fieldId;
     },
 
     // ================= MODAL CONTROL =================
@@ -43,11 +63,17 @@ const updateSlice = createSlice({
 
     // ================= FILTER =================
     setStageFilter: (state, action: PayloadAction<UpdateStageFilter>) => {
-      state.stageFilter = action.payload;
+      const value = action.payload;
+
+      console.log("setStageFilter:", value);
+
+      state.stageFilter = value;
     },
 
     // ================= RESET UI =================
     resetUpdateUI: (state) => {
+      console.log("resetUpdateUI called");
+
       state.selectedFieldId = null;
       state.isModalOpen = false;
       state.stageFilter = "all";
