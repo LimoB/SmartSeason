@@ -33,7 +33,6 @@ export default function Navbar() {
       .join("")
       .toUpperCase() || "U";
 
-  // Navigation Logic for Scrolling
   const scrollToSection = (sectionId: string) => {
     setMobileMenuOpen(false); 
 
@@ -64,7 +63,6 @@ export default function Navbar() {
     setOpen(false);
   };
 
-  // Close dropdown on click outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
@@ -75,7 +73,6 @@ export default function Navbar() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // Prevent background scroll when mobile menu is open
   useEffect(() => {
     if (mobileMenuOpen) {
       document.body.style.overflow = "hidden";
@@ -85,7 +82,7 @@ export default function Navbar() {
   }, [mobileMenuOpen]);
 
   return (
-    <nav className="fixed top-0 left-0 w-full z-[100] bg-white/90 dark:bg-dark-bg/90 backdrop-blur-xl border-b border-gray-200/60 dark:border-dark-border text-gray-800 dark:text-gray-100">
+    <nav className="fixed top-0 left-0 w-full z-[100] bg-white dark:bg-dark-bg border-b border-gray-200 dark:border-dark-border text-gray-800 dark:text-gray-100">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 md:h-20 flex items-center justify-between">
         
         {/* LEFT: Logo & Nav Links */}
@@ -132,20 +129,20 @@ export default function Navbar() {
                 onClick={() => setOpen(!open)}
                 className="flex items-center gap-2 p-1 md:pr-3 rounded-full bg-gray-100 dark:bg-slate-800 hover:ring-2 hover:ring-green-500/30 transition"
               >
-                <div className="w-8 h-8 md:w-9 md:h-9 bg-green-600 rounded-full flex items-center justify-center text-white text-xs md:text-sm font-bold shadow-inner">
+                <div className="w-8 h-8 md:w-9 md:h-9 bg-green-600 rounded-full flex items-center justify-center text-white text-xs md:text-sm font-bold shadow-inner shrink-0">
                   {initials}
                 </div>
-                <span className="text-sm font-bold hidden md:block">
+                <span className="text-sm font-bold hidden md:block max-w-[100px] truncate">
                   {user.fullName.split(" ")[0]}
                 </span>
               </button>
 
-              {/* Profile Dropdown */}
+              {/* Profile Dropdown - FIXED TRANSPARENCY & OVERLAP */}
               {open && (
-                <div className="absolute right-0 mt-3 w-56 bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-gray-100 dark:border-slate-800 py-2 overflow-hidden animate-in fade-in zoom-in-95 duration-100">
-                  <div className="px-4 py-3 md:hidden border-b border-gray-50 dark:border-slate-800">
+                <div className="absolute right-0 mt-3 w-56 bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-gray-200 dark:border-slate-700 py-2 overflow-hidden animate-in fade-in zoom-in-95 duration-100 z-[110]">
+                  <div className="px-4 py-3 md:hidden border-b border-gray-100 dark:border-slate-800 bg-gray-50/50 dark:bg-slate-800/50">
                     <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Account</p>
-                    <p className="text-sm font-bold truncate">{user.fullName}</p>
+                    <p className="text-sm font-bold truncate text-gray-800 dark:text-white">{user.fullName}</p>
                   </div>
                   <DropdownItem icon={<User size={18} />} onClick={() => { navigate("/profile"); setOpen(false); }}>Profile</DropdownItem>
                   <DropdownItem icon={<LayoutDashboard size={18} />} onClick={() => { navigate(getDashboardRoute()); setOpen(false); }}>Dashboard</DropdownItem>
@@ -159,7 +156,7 @@ export default function Navbar() {
 
           {/* Mobile Menu Toggle */}
           <button 
-            className="lg:hidden p-2 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-lg transition" 
+            className="lg:hidden p-2 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-lg transition-colors" 
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
           >
             {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
@@ -167,29 +164,29 @@ export default function Navbar() {
         </div>
       </div>
 
-      {/* Mobile Sidebar Overlay */}
-      <div className={`fixed inset-0 top-16 md:top-20 z-40 lg:hidden transition-all duration-300 ${mobileMenuOpen ? "opacity-100 visible" : "opacity-0 invisible"}`}>
+      {/* Mobile Sidebar - FIXED BACKGROUND & DEPTH */}
+      <div className={`fixed inset-0 top-16 md:top-20 z-[90] lg:hidden transition-all duration-300 ${mobileMenuOpen ? "visible" : "invisible"}`}>
         {/* Backdrop */}
-        <div className="absolute inset-0 bg-black/20 backdrop-blur-sm" onClick={() => setMobileMenuOpen(false)} />
+        <div className={`absolute inset-0 bg-slate-900/60 backdrop-blur-sm transition-opacity duration-300 ${mobileMenuOpen ? "opacity-100" : "opacity-0"}`} onClick={() => setMobileMenuOpen(false)} />
         
         {/* Menu Content */}
-        <div className={`absolute right-0 top-0 h-full w-[280px] bg-white dark:bg-dark-bg shadow-xl border-l border-gray-100 dark:border-slate-800 p-6 flex flex-col gap-2 transition-transform duration-300 ${mobileMenuOpen ? "translate-x-0" : "translate-x-full"}`}>
-          <p className="text-xs font-bold text-gray-400 uppercase tracking-[0.2em] mb-4">Navigation</p>
+        <div className={`absolute right-0 top-0 h-full w-[280px] bg-white dark:bg-dark-bg shadow-2xl border-l border-gray-200 dark:border-slate-800 p-6 flex flex-col gap-2 transition-transform duration-300 ease-out ${mobileMenuOpen ? "translate-x-0" : "translate-x-full"}`}>
+          <p className="text-xs font-black text-gray-400 uppercase tracking-[0.2em] mb-4">Main Navigation</p>
           <MobileNavItem onClick={() => scrollToSection("home")} icon={<Home size={20}/>}>Home</MobileNavItem>
           <MobileNavItem onClick={() => scrollToSection("services")}>Services</MobileNavItem>
           <MobileNavItem onClick={() => scrollToSection("about")}>About</MobileNavItem>
           <MobileNavItem onClick={() => scrollToSection("contact")}>Contact</MobileNavItem>
           
           <div className="mt-auto pt-6 border-t border-gray-100 dark:border-slate-800 flex flex-col gap-4">
-            <div className="flex items-center justify-between px-2">
-              <span className="text-sm font-medium">Dark Mode</span>
+            <div className="flex items-center justify-between px-4 py-2 bg-gray-50 dark:bg-slate-800/50 rounded-xl">
+              <span className="text-sm font-bold text-gray-600 dark:text-gray-300">Appearance</span>
               <ThemeToggle />
             </div>
             {!user && (
               <Link 
                 to="/register" 
                 onClick={() => setMobileMenuOpen(false)}
-                className="w-full py-4 rounded-xl bg-green-600 text-white font-bold text-center shadow-lg"
+                className="w-full py-4 rounded-xl bg-green-600 text-white font-black text-center shadow-lg shadow-green-600/30 active:scale-95 transition-transform"
               >
                 Get Started
               </Link>
@@ -205,9 +202,13 @@ function DropdownItem({ children, icon, onClick, danger = false }: { children: R
   return (
     <button
       onClick={onClick}
-      className={`w-full flex items-center gap-3 px-4 py-3 text-sm font-semibold transition-colors ${danger ? "text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10" : "text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-slate-800"}`}
+      className={`w-full flex items-center gap-3 px-4 py-3 text-sm font-bold transition-all ${
+        danger 
+          ? "text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10" 
+          : "text-gray-700 dark:text-gray-200 hover:bg-green-50 dark:hover:bg-slate-800"
+      }`}
     >
-      <span className="opacity-70">{icon}</span>
+      <span className={danger ? "text-red-500" : "text-green-600 opacity-80"}>{icon}</span>
       {children}
     </button>
   );
@@ -217,7 +218,7 @@ function MobileNavItem({ children, onClick, icon }: { children: React.ReactNode;
   return (
     <button 
       onClick={onClick} 
-      className="flex items-center gap-3 w-full text-left py-4 px-4 rounded-xl font-bold text-lg text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-slate-800 transition-all active:scale-[0.98]"
+      className="flex items-center gap-4 w-full text-left py-4 px-4 rounded-2xl font-black text-lg text-gray-800 dark:text-gray-100 hover:bg-green-50 dark:hover:bg-slate-800 transition-all active:scale-[0.96]"
     >
       {icon && <span className="text-green-600">{icon}</span>}
       {children}
