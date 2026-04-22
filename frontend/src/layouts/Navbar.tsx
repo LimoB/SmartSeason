@@ -8,6 +8,7 @@ import {
   Settings,
   Menu,
   X,
+  Sprout,
 } from "lucide-react";
 
 import { useAppDispatch, useAppSelector } from "@/app/hooks";
@@ -34,17 +35,15 @@ export default function Navbar() {
 
   // Navigation Logic for Scrolling
   const scrollToSection = (sectionId: string) => {
-    setMobileMenuOpen(false); // Close mobile menu if open
+    setMobileMenuOpen(false); 
 
     if (location.pathname !== "/") {
-      // If not on landing page, navigate home then scroll
       navigate("/");
       setTimeout(() => {
         const element = document.getElementById(sectionId);
         element?.scrollIntoView({ behavior: "smooth" });
       }, 100);
     } else {
-      // Already home, just scroll
       const element = document.getElementById(sectionId);
       element?.scrollIntoView({ behavior: "smooth" });
     }
@@ -62,8 +61,10 @@ export default function Navbar() {
     dispatch(logout());
     localStorage.removeItem("token");
     navigate("/login");
+    setOpen(false);
   };
 
+  // Close dropdown on click outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
@@ -74,41 +75,54 @@ export default function Navbar() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  // Prevent background scroll when mobile menu is open
+  useEffect(() => {
+    if (mobileMenuOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "unset";
+    }
+  }, [mobileMenuOpen]);
+
   return (
-    <nav className="fixed top-0 left-0 w-full z-50 bg-white/80 dark:bg-dark-bg/80 backdrop-blur-xl border-b border-gray-200/60 dark:border-dark-border text-gray-800 dark:text-gray-100">
-      <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
+    <nav className="fixed top-0 left-0 w-full z-[100] bg-white/90 dark:bg-dark-bg/90 backdrop-blur-xl border-b border-gray-200/60 dark:border-dark-border text-gray-800 dark:text-gray-100">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 md:h-20 flex items-center justify-between">
         
         {/* LEFT: Logo & Nav Links */}
-        <div className="flex items-center gap-10">
+        <div className="flex items-center gap-4 md:gap-10">
           <button 
             onClick={() => scrollToSection("home")}
-            className="text-xl font-bold text-primary-500 tracking-tight"
+            className="flex items-center gap-2 text-lg md:text-xl font-bold text-green-600 tracking-tight"
           >
-            SmartSeason
+            <Sprout className="w-6 h-6" />
+            <span className="hidden xs:block">SmartSeason</span>
           </button>
 
-          <div className="hidden md:flex items-center gap-6 text-sm font-medium text-gray-500 dark:text-gray-300">
-            <button onClick={() => scrollToSection("home")} className="hover:text-primary-500 transition flex items-center gap-1">
-              <Home size={16} /> Home
-            </button>
-            <button onClick={() => scrollToSection("services")} className="hover:text-primary-500 transition">Services</button>
-            <button onClick={() => scrollToSection("about")} className="hover:text-primary-500 transition">About</button>
-            <button onClick={() => scrollToSection("contact")} className="hover:text-primary-500 transition">Contact</button>
+          <div className="hidden lg:flex items-center gap-8 text-sm font-semibold text-gray-500 dark:text-gray-400">
+            {["home", "services", "about", "contact"].map((id) => (
+              <button 
+                key={id}
+                onClick={() => scrollToSection(id)} 
+                className="hover:text-green-600 transition-colors capitalize"
+              >
+                {id}
+              </button>
+            ))}
           </div>
         </div>
 
         {/* RIGHT: Actions & Profile */}
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-2 sm:gap-4">
           <div className="hidden sm:block">
             <ThemeToggle />
           </div>
 
           {!user ? (
-            <div className="flex items-center gap-4">
-              <Link to="/login" className="text-sm font-semibold text-gray-600 hover:text-primary-500 transition">
+            <div className="flex items-center gap-3">
+              <Link to="/login" className="text-sm font-bold text-gray-600 dark:text-gray-300 hover:text-green-600 transition px-2">
                 Login
               </Link>
-              <Link to="/register" className="px-5 py-2.5 rounded-xl bg-primary-500 text-white font-bold text-sm hover:bg-primary-600 transition shadow-lg shadow-primary-500/20">
+              <Link to="/register" className="hidden xs:flex px-5 py-2.5 rounded-xl bg-green-600 text-white font-bold text-sm hover:bg-green-700 transition shadow-lg shadow-green-600/20">
                 Get Started
               </Link>
             </div>
@@ -116,47 +130,73 @@ export default function Navbar() {
             <div className="relative" ref={menuRef}>
               <button
                 onClick={() => setOpen(!open)}
-                className="flex items-center gap-3 px-2 py-1 rounded-full bg-gray-100 dark:bg-dark-surface hover:ring-2 hover:ring-primary-500/30 transition"
+                className="flex items-center gap-2 p-1 md:pr-3 rounded-full bg-gray-100 dark:bg-slate-800 hover:ring-2 hover:ring-green-500/30 transition"
               >
-                <div className="w-9 h-9 bg-primary-500 rounded-full flex items-center justify-center text-white text-sm font-bold shadow-inner">
+                <div className="w-8 h-8 md:w-9 md:h-9 bg-green-600 rounded-full flex items-center justify-center text-white text-xs md:text-sm font-bold shadow-inner">
                   {initials}
                 </div>
-                <span className="text-sm font-semibold hidden md:block pr-2">
+                <span className="text-sm font-bold hidden md:block">
                   {user.fullName.split(" ")[0]}
                 </span>
               </button>
 
+              {/* Profile Dropdown */}
               {open && (
-                <div className="absolute right-0 mt-3 w-48 bg-white dark:bg-dark-surface rounded-2xl shadow-2xl border border-gray-100 dark:border-dark-border py-2 animate-in fade-in slide-in-from-top-2">
-                  <DropdownItem icon={<User size={16} />} onClick={() => { navigate("/profile"); setOpen(false); }}>Profile</DropdownItem>
-                  <DropdownItem icon={<LayoutDashboard size={16} />} onClick={() => { navigate(getDashboardRoute()); setOpen(false); }}>Dashboard</DropdownItem>
-                  <DropdownItem icon={<Settings size={16} />} onClick={() => { navigate("/settings"); setOpen(false); }}>Settings</DropdownItem>
-                  <div className="my-2 border-t border-gray-100 dark:border-dark-border" />
-                  <DropdownItem icon={<LogOut size={16} />} danger onClick={handleLogout}>Logout</DropdownItem>
+                <div className="absolute right-0 mt-3 w-56 bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-gray-100 dark:border-slate-800 py-2 overflow-hidden animate-in fade-in zoom-in-95 duration-100">
+                  <div className="px-4 py-3 md:hidden border-b border-gray-50 dark:border-slate-800">
+                    <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Account</p>
+                    <p className="text-sm font-bold truncate">{user.fullName}</p>
+                  </div>
+                  <DropdownItem icon={<User size={18} />} onClick={() => { navigate("/profile"); setOpen(false); }}>Profile</DropdownItem>
+                  <DropdownItem icon={<LayoutDashboard size={18} />} onClick={() => { navigate(getDashboardRoute()); setOpen(false); }}>Dashboard</DropdownItem>
+                  <DropdownItem icon={<Settings size={18} />} onClick={() => { navigate("/settings"); setOpen(false); }}>Settings</DropdownItem>
+                  <div className="my-1 border-t border-gray-100 dark:border-slate-800" />
+                  <DropdownItem icon={<LogOut size={18} />} danger onClick={handleLogout}>Logout</DropdownItem>
                 </div>
               )}
             </div>
           )}
 
           {/* Mobile Menu Toggle */}
-          <button className="md:hidden p-2" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
-            {mobileMenuOpen ? <X /> : <Menu />}
+          <button 
+            className="lg:hidden p-2 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-lg transition" 
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+          >
+            {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
           </button>
         </div>
       </div>
 
-      {/* Mobile Sidebar/Menu */}
-      {mobileMenuOpen && (
-        <div className="md:hidden bg-white dark:bg-dark-bg border-b border-gray-200 dark:border-dark-border px-6 py-6 flex flex-col gap-4 animate-in slide-in-from-top w-full">
-          <button onClick={() => scrollToSection("home")} className="text-left py-2 font-semibold">Home</button>
-          <button onClick={() => scrollToSection("services")} className="text-left py-2 font-semibold">Services</button>
-          <button onClick={() => scrollToSection("about")} className="text-left py-2 font-semibold">About</button>
-          <button onClick={() => scrollToSection("contact")} className="text-left py-2 font-semibold">Contact</button>
-          <div className="pt-4 border-t border-gray-100 dark:border-dark-border">
-            <ThemeToggle />
+      {/* Mobile Sidebar Overlay */}
+      <div className={`fixed inset-0 top-16 md:top-20 z-40 lg:hidden transition-all duration-300 ${mobileMenuOpen ? "opacity-100 visible" : "opacity-0 invisible"}`}>
+        {/* Backdrop */}
+        <div className="absolute inset-0 bg-black/20 backdrop-blur-sm" onClick={() => setMobileMenuOpen(false)} />
+        
+        {/* Menu Content */}
+        <div className={`absolute right-0 top-0 h-full w-[280px] bg-white dark:bg-dark-bg shadow-xl border-l border-gray-100 dark:border-slate-800 p-6 flex flex-col gap-2 transition-transform duration-300 ${mobileMenuOpen ? "translate-x-0" : "translate-x-full"}`}>
+          <p className="text-xs font-bold text-gray-400 uppercase tracking-[0.2em] mb-4">Navigation</p>
+          <MobileNavItem onClick={() => scrollToSection("home")} icon={<Home size={20}/>}>Home</MobileNavItem>
+          <MobileNavItem onClick={() => scrollToSection("services")}>Services</MobileNavItem>
+          <MobileNavItem onClick={() => scrollToSection("about")}>About</MobileNavItem>
+          <MobileNavItem onClick={() => scrollToSection("contact")}>Contact</MobileNavItem>
+          
+          <div className="mt-auto pt-6 border-t border-gray-100 dark:border-slate-800 flex flex-col gap-4">
+            <div className="flex items-center justify-between px-2">
+              <span className="text-sm font-medium">Dark Mode</span>
+              <ThemeToggle />
+            </div>
+            {!user && (
+              <Link 
+                to="/register" 
+                onClick={() => setMobileMenuOpen(false)}
+                className="w-full py-4 rounded-xl bg-green-600 text-white font-bold text-center shadow-lg"
+              >
+                Get Started
+              </Link>
+            )}
           </div>
         </div>
-      )}
+      </div>
     </nav>
   );
 }
@@ -165,9 +205,22 @@ function DropdownItem({ children, icon, onClick, danger = false }: { children: R
   return (
     <button
       onClick={onClick}
-      className={`w-full flex items-center gap-3 px-4 py-2.5 text-sm font-medium transition ${danger ? "text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10" : "hover:bg-gray-50 dark:hover:bg-white/5"}`}
+      className={`w-full flex items-center gap-3 px-4 py-3 text-sm font-semibold transition-colors ${danger ? "text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10" : "text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-slate-800"}`}
     >
-      {icon} {children}
+      <span className="opacity-70">{icon}</span>
+      {children}
+    </button>
+  );
+}
+
+function MobileNavItem({ children, onClick, icon }: { children: React.ReactNode; onClick: () => void; icon?: React.ReactNode }) {
+  return (
+    <button 
+      onClick={onClick} 
+      className="flex items-center gap-3 w-full text-left py-4 px-4 rounded-xl font-bold text-lg text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-slate-800 transition-all active:scale-[0.98]"
+    >
+      {icon && <span className="text-green-600">{icon}</span>}
+      {children}
     </button>
   );
 }
