@@ -3,9 +3,9 @@ import { useAppDispatch, useAppSelector } from "@/app/hooks";
 import { useGetFieldUpdatesQuery } from "@/features/updates/updateApi";
 import { setStageFilter } from "@/features/updates/updateSlice";
 import { Plus, Filter, Calendar, ClipboardList } from "lucide-react";
-import type { FieldStage } from "@/types/types"; // Importing from your provided schema types
+import type { FieldStage } from "@/types/types";
 
-// Used for the filter logic to include the "all" option
+/* ================= TYPES ================= */
 type FilterStageType = FieldStage | "all";
 
 export default function Updates() {
@@ -14,17 +14,21 @@ export default function Updates() {
 
   const { selectedFieldId, stageFilter } = useAppSelector((state) => state.updates);
 
-  const { data: updates = [], isLoading } = useGetFieldUpdatesQuery(
-    selectedFieldId as number,
-    { skip: !selectedFieldId }
-  );
+  /* ================= SAFE QUERY ================= */
+  const {
+    data: updates = [],
+    isLoading,
+  } = useGetFieldUpdatesQuery(selectedFieldId ?? 0, {
+    skip: !selectedFieldId,
+  });
 
-  // Use the type for the filter logic
-  const filteredUpdates = (stageFilter as FilterStageType) === "all"
-    ? updates
-    : updates.filter((u) => u.stage === stageFilter);
+  /* ================= FILTER LOGIC ================= */
+  const filteredUpdates =
+    stageFilter === "all"
+      ? updates
+      : updates.filter((u) => u.stage === stageFilter);
 
-  // Explicitly typing the change event to remove 'any'
+  /* ================= HANDLERS ================= */
   const handleFilterChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     dispatch(setStageFilter(e.target.value as FilterStageType));
   };
@@ -90,8 +94,12 @@ export default function Updates() {
                     <Calendar size={18} />
                   </div>
                   <div>
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Current Stage</span>
-                    <span className="font-bold text-slate-900 dark:text-white capitalize">{u.stage}</span>
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">
+                      Current Stage
+                    </span>
+                    <span className="font-bold text-slate-900 dark:text-white capitalize">
+                      {u.stage}
+                    </span>
                   </div>
                 </div>
                 <div className="px-3 py-1 bg-slate-100 dark:bg-slate-800 rounded-lg text-[10px] font-bold text-slate-500">

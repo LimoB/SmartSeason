@@ -4,45 +4,103 @@ import {
   getFieldUpdatesService,
 } from "./update.service";
 
-// ================= CREATE UPDATE =================
-export const createUpdate = async (req: Request, res: Response, next: NextFunction) => {
+/* ================= TYPES ================= */
+const VALID_STAGES = ["planted", "growing", "ready", "harvested"] as const;
+
+/* ================= CREATE UPDATE ================= */
+export const createUpdate = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
   try {
     const agentId = req.user?.userId;
     const { fieldId, stage, notes } = req.body;
 
+    /* ================= AUTH CHECK ================= */
     if (!agentId) {
-      return res.status(401).json({ error: "Authentication required" });
+      return res.status(401).json({
+        success: false,
+        error: "Authentication required",
+      });
     }
 
-    if (!fieldId || !stage) {
-      return res.status(400).json({ error: "Field ID and Stage are required" });
+    /* ================= VALIDATION ================= */
+    const parsedFieldId = Number(fieldId);
+
+    if (!parsedFieldId || isNaN(parsedFieldId)) {
+      return res.status(400).json({
+        success: false,
+        error: "Valid Field ID is required",
+      });
     }
 
-    // Note: In a real app, you'd check here if the agent is assigned to this field
+    if (!stage || !VALID_STAGES.includes(stage)) {
+      return res.status(400).json({
+        success: false,
+        error: `Invalid stage. Must be one of: ${VALID_STAGES.join(", ")}`,
+      });
+    }
+
+    /* ================= SERVICE CALL ================= */
     const update = await createUpdateService({
-      fieldId: Number(fieldId),
+      fieldId: parsedFieldId,
       agentId,
       stage,
       notes,
     });
 
-    return res.status(201).json(update);
-  } catch (error) {
+    return res.status(201).json({
+      success: true,
+      message: "Field update recorded successfully",
+      data: update,
+    });
+  } catch (error: any) {
+    /* ================= BUSINESS ERRORS ================= */
+    if (
+      error.message === "Field not found" ||
+      error.message === "Agent not found"
+    ) {
+      return res.status(404).json({
+        success: false,
+        error: error.message,
+      });
+    }
+
+    if (error.message === "Unauthorized: You are not assigned to this field") {
+      return res.status(403).json({
+        success: false,
+        error: error.message,
+      });
+    }
+
     next(error);
   }
 };
 
-// ================= GET FIELD UPDATES =================
-export const getFieldUpdates = async (req: Request, res: Response, next: NextFunction) => {
+/* ================= GET FIELD UPDATES ================= */
+export const getFieldUpdates = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
   try {
     const fieldId = Number(req.params.fieldId);
 
-    if (isNaN(fieldId)) {
-      return res.status(400).json({ error: "Invalid field ID" });
+    if (!fieldId || isNaN(fieldId)) {
+      return res.status(400).json({
+        success: false,
+        error: "Invalid field ID",
+      });
     }
 
     const updates = await getFieldUpdatesService(fieldId);
-    return res.json(updates);
+
+    return res.status(200).json({
+      success: true,
+      count: updates.length,
+      data: updates,
+    });
   } catch (error) {
     next(error);
   }

@@ -1,6 +1,6 @@
-import { eq } from "drizzle-orm";
+import { eq, desc } from "drizzle-orm";
 import db from "../../drizzle/db";
-import { fieldUpdates, fields } from "../../drizzle/schema";
+import { fieldUpdates, fields, users } from "../../drizzle/schema";
 
 export type CreateUpdateInput = {
   fieldId: number;
@@ -9,25 +9,51 @@ export type CreateUpdateInput = {
   notes?: string;
 };
 
-// ================= CREATE UPDATE (With Transaction) =================
+// ================= CREATE UPDATE =================
 export const createUpdateService = async (data: CreateUpdateInput) => {
   return await db.transaction(async (tx) => {
-    // 1. Insert update record for history tracking
+
+    // 1. Check field exists
+    const [field] = await tx
+      .select()
+      .from(fields)
+      .where(eq(fields.id, data.fieldId));
+
+    if (!field) {
+      throw new Error("Field not found");
+    }
+
+    //  2. Check agent exists
+    const [agent] = await tx
+      .select()
+      .from(users)
+      .where(eq(users.id, data.agentId));
+
+    if (!agent) {
+      throw new Error("Agent not found");
+    }
+
+    //  3. Ensure agent is assigned to field
+    if (field.assignedAgentId !== data.agentId) {
+      throw new Error("Unauthorized: You are not assigned to this field");
+    }
+
+    //  4. Insert update history
     const [newUpdate] = await tx
       .insert(fieldUpdates)
       .values({
         fieldId: data.fieldId,
         agentId: data.agentId,
         stage: data.stage,
-        notes: data.notes,
+        notes: data.notes ?? null, // important
       })
       .returning();
 
-    // 2. Sync latest stage to the main fields table
+    //  5. Sync latest stage
     await tx
       .update(fields)
       .set({
-        currentStage: data.stage, // Matches your finalized schema
+        currentStage: data.stage,
         updatedAt: new Date(),
       })
       .where(eq(fields.id, data.fieldId));
@@ -36,11 +62,11 @@ export const createUpdateService = async (data: CreateUpdateInput) => {
   });
 };
 
-// ================= GET UPDATES FOR FIELD =================
+// ================= GET UPDATES =================
 export const getFieldUpdatesService = async (fieldId: number) => {
   return await db
     .select()
     .from(fieldUpdates)
     .where(eq(fieldUpdates.fieldId, fieldId))
-    .orderBy(fieldUpdates.createdAt); // Added ordering for history view
+    .orderBy(desc(fieldUpdates.createdAt)); // latest first
 };

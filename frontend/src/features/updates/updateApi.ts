@@ -9,6 +9,15 @@ export interface CreateUpdateRequest {
   notes?: string;
 }
 
+/* ================= API RESPONSE WRAPPER ================= */
+
+interface ApiResponse<T> {
+  success: boolean;
+  message?: string;
+  data: T;
+  count?: number;
+}
+
 /* ================= API ================= */
 
 export const updateApi = baseApi.injectEndpoints({
@@ -21,12 +30,14 @@ export const updateApi = baseApi.injectEndpoints({
         method: "POST",
         body: data,
       }),
+      transformResponse: (response: ApiResponse<FieldUpdate>) => response.data,
       invalidatesTags: ["Field", "Update"],
     }),
 
     // ================= GET FIELD UPDATES =================
     getFieldUpdates: builder.query<FieldUpdate[], number>({
       query: (fieldId) => `/updates/field/${fieldId}`,
+      transformResponse: (response: ApiResponse<FieldUpdate[]>) => response.data,
       providesTags: ["Update"],
     }),
 

@@ -1,25 +1,31 @@
 import { Router } from "express";
 import { createUpdate, getFieldUpdates } from "./update.controller";
-import { adminOrAgentAuth } from "../../middleware/bearAuth";
+import { agentAuth, adminOrAgentAuth } from "../../middleware/bearAuth";
 
-/**
- * Type annotation for Router is necessary for NodeNext portability
- */
 const router: Router = Router();
 
-// ================= FIELD UPDATE ROUTES =================
+/* ============================================================
+   FIELD UPDATE ROUTES
+============================================================ */
 
 /**
  * POST /api/updates
- * Purpose: Allows Agents to submit field progress.
- * Logic: Updates the history log AND the main field status.
+ * Purpose: ONLY agents submit field updates
  */
-router.post("/", adminOrAgentAuth, createUpdate);
+router.post(
+  "/",
+  agentAuth, //  only field agents
+  createUpdate
+);
 
 /**
  * GET /api/updates/field/:fieldId
- * Purpose: Get chronological history of a specific field.
+ * Purpose: Admin + Agent can view updates
  */
-router.get("/field/:fieldId", adminOrAgentAuth, getFieldUpdates);
+router.get(
+  "/field/:fieldId",
+  adminOrAgentAuth, // both roles allowed
+  getFieldUpdates
+);
 
 export default router;

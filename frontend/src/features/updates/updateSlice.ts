@@ -1,13 +1,10 @@
 import { createSlice, type PayloadAction } from "@reduxjs/toolkit";
+import type { FieldStage } from "@/types/types";
 
 /* ================= TYPES ================= */
 
-export type UpdateStageFilter =
-  | "all"
-  | "planted"
-  | "growing"
-  | "ready"
-  | "harvested";
+// UI filter includes "all", backend does NOT
+export type UpdateStageFilter = "all" | FieldStage;
 
 type UpdateState = {
   selectedFieldId: number | null;
