@@ -1,6 +1,6 @@
 import { eq } from "drizzle-orm";
-import db from "@/drizzle/db";
-import { fields } from "@/drizzle/schema";
+import db from "../../drizzle/db";
+import { fields } from "../../drizzle/schema";
 
 /* ================= TYPES ================= */
 

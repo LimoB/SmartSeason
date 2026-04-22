@@ -10,7 +10,7 @@ import {
 import {
   adminAuth,
   adminOrAgentAuth, // Use this for shared access
-} from "@/middleware/bearAuth";
+} from "../../middleware/bearAuth";
 
 const router: Router = Router();
 

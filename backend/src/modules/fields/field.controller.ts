@@ -7,7 +7,7 @@ import {
   updateFieldService,
   deleteFieldService,
 } from "./field.service";
-import type { DecodedToken } from "@/middleware/bearAuth";
+import type { DecodedToken } from "../../middleware/bearAuth";
 
 /* ================= TYPE GUARD ================= */
 

@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { createUpdate, getFieldUpdates } from "./update.controller";
-import { adminOrAgentAuth } from "@/middleware/bearAuth";
+import { adminOrAgentAuth } from "../../middleware/bearAuth";
 
 /**
  * Type annotation for Router is necessary for NodeNext portability

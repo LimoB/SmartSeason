@@ -1,5 +1,5 @@
-import db from "@/drizzle/db";
-import { fields } from "@/drizzle/schema";
+import db from "../../drizzle/db";
+import { fields } from "../../drizzle/schema";
 import { eq, sql } from "drizzle-orm";
 
 /* ================= FIELD STATUS LOGIC ================= */

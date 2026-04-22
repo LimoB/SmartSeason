@@ -1,6 +1,6 @@
 import { eq } from "drizzle-orm";
-import db from "@/drizzle/db";
-import { users } from "@/drizzle/schema";
+import db from "../../drizzle/db";
+import { users } from "../../drizzle/schema";
 import bcrypt from "bcrypt";
 
 /* ================= SAFE USER OUTPUT ================= */

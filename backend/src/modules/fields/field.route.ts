@@ -6,7 +6,7 @@ import {
   updateField,
   deleteField,
 } from "./field.controller";
-import { adminAuth, adminOrAgentAuth } from "@/middleware/bearAuth";
+import { adminAuth, adminOrAgentAuth } from "../../middleware/bearAuth";
 
 const router: Router = Router();
 

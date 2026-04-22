@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { getAdminDashboard, getAgentDashboard } from "./dashboard.controller";
-import { adminAuth, agentAuth } from "@/middleware/bearAuth";
+import { adminAuth, agentAuth } from "../../middleware/bearAuth";
 
 const router: Router = Router();
 

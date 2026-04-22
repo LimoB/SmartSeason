@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { register, login, getMe } from "./auth.controller";
-import { adminOrAgentAuth } from "@/middleware/bearAuth";
+import { adminOrAgentAuth } from "../../middleware/bearAuth";
 
 const router: Router = Router();
 
